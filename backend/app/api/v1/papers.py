@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_db, get_current_user
+from app.models.user import User
 from app.schemas.paper import Paper, PaperCreate, PaperUpdate
 from app.services.paper_service import (
     create_paper,

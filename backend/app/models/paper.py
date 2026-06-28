@@ -19,6 +19,7 @@ class Paper(Base):
     is_favorite = Column(Boolean, default=False)
 
     user = relationship("User", back_populates="papers")
+    ai_analyses = relationship("AIAnalysis", back_populates="paper")
 
     def __repr__(self):
         return f"<Paper(id={self.id}, title={self.title}, user_id={self.user_id})>"

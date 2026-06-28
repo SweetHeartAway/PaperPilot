@@ -1,6 +1,8 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean
+from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.utils.database import Base
+
 
 class User(Base):
     __tablename__ = "users"
@@ -12,6 +14,8 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    papers = relationship("Paper", back_populates="user")
 
     def __repr__(self):
         return f"<User(id={self.id}, email={self.email}, username={self.username})>"
