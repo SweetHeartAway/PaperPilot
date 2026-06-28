@@ -7,7 +7,7 @@ from app.utils.database import Base, get_db
 from app.core.config import settings
 
 # 提前导入所有模型，确保Base.metadata已有表信息
-from app.models import User, Paper, AIAnalysis  # noqa: F401
+from app.models import User, Paper, AIAnalysis, Tag  # noqa: F401
 
 # 使用独立的测试数据库文件
 TEST_DB_PATH = os.path.join(os.path.dirname(__file__), "test_paperpilot.db")

@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app.core.config import settings
-from app.api.v1 import auth, papers, users, ai
+from app.api.v1 import auth, papers, users, ai, tags
 from app.models import Base
 from app.utils.database import engine
 
@@ -17,6 +17,7 @@ app = FastAPI(
 app.include_router(auth.router, prefix="/api/v1/auth", tags=["auth"])
 app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
 app.include_router(papers.router, prefix="/api/v1/papers", tags=["papers"])
+app.include_router(tags.router, prefix="/api/v1/tags", tags=["tags"])
 app.include_router(ai.router, prefix="/api/v1/ai", tags=["ai"])
 
 @app.get("/")

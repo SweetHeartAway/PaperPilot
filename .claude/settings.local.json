@@ -29,7 +29,10 @@
       "Bash(mv .claude/skills/api-design.md .claude/skills/api-design/SKILL.md)",
       "Bash(PYTHONPATH=. python -m pytest tests/test_users.py -v)",
       "Bash(python *)",
-      "Bash(PYTHONPATH=backend python *)"
+      "Bash(PYTHONPATH=backend python *)",
+      "Bash(git push *)",
+      "Bash(PYTHONPATH=. python -m pytest tests/test_tags.py -v)",
+      "Bash(PYTHONPATH=. python -m pytest tests/test_auth.py -v)"
     ]
   }
 }

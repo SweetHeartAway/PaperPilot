@@ -1,0 +1,1 @@
+- [Tag feature patterns](tag-feature-implementation.md) — Tag model, CRUD, paper-tag association patterns

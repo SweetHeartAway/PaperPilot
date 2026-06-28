@@ -3,6 +3,7 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
+from app.schemas.tag import Tag as TagSchema
 
 class PaperBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=500)
@@ -29,6 +30,7 @@ class Paper(PaperBase):
     file_uuid: Optional[str] = None
     original_filename: Optional[str] = None
     file_size: Optional[int] = None
+    tags: List[TagSchema] = []
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
