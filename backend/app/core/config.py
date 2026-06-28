@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     # AI服务配置
     AI_SERVICE_URL: Optional[str] = None
 
+    # 文件上传配置
+    UPLOAD_DIR: str = "./uploads"
+    MAX_UPLOAD_SIZE: int = 50 * 1024 * 1024  # 50MB
+
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
 settings = Settings()

@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import Optional, List
+from datetime import datetime
 
 class PaperBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=500)
@@ -7,7 +8,6 @@ class PaperBase(BaseModel):
     authors: Optional[str] = None
     publication_date: Optional[str] = None
     doi: Optional[str] = None
-    file_path: Optional[str] = None
     is_favorite: bool = False
 
 class PaperCreate(PaperBase):
@@ -19,17 +19,18 @@ class PaperUpdate(BaseModel):
     authors: Optional[str] = None
     publication_date: Optional[str] = None
     doi: Optional[str] = None
-    file_path: Optional[str] = None
     is_favorite: Optional[bool] = None
 
 class Paper(PaperBase):
     id: int
     user_id: int
-    created_at: Optional[str] = None
-    updated_at: Optional[str] = None
+    file_uuid: Optional[str] = None
+    original_filename: Optional[str] = None
+    file_size: Optional[int] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
 
 class PaperSearch(BaseModel):
     query: str = Field(..., min_length=1)

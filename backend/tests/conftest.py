@@ -1,8 +1,10 @@
 import pytest
 import os
+import tempfile
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from app.utils.database import Base, get_db
+from app.core.config import settings
 
 # 提前导入所有模型，确保Base.metadata已有表信息
 from app.models import User, Paper, AIAnalysis  # noqa: F401
@@ -33,9 +35,14 @@ def db_session():
 
 @pytest.fixture(scope="function")
 def test_client(db_session):
-    """创建测试客户端"""
+    """创建测试客户端（含隔离的上传目录）"""
     from fastapi.testclient import TestClient
     from main import app
+
+    # 使用临时目录作为上传目录，隔离测试文件
+    tmp_upload = tempfile.mkdtemp()
+    old_upload_dir = settings.UPLOAD_DIR
+    settings.UPLOAD_DIR = tmp_upload
 
     def override_get_db():
         try:
@@ -47,3 +54,9 @@ def test_client(db_session):
     client = TestClient(app)
     yield client
     app.dependency_overrides.clear()
+    settings.UPLOAD_DIR = old_upload_dir
+
+    # 清理临时上传目录
+    import shutil
+    if os.path.exists(tmp_upload):
+        shutil.rmtree(tmp_upload)

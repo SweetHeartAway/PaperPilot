@@ -12,7 +12,18 @@
       "Bash(pip --version)",
       "Bash(pip list *)",
       "Bash(PYTHONPATH=. python -m uvicorn main:app --host 0.0.0.0 --port 8000 --reload)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "Bash(chmod +x *)",
+      "Bash(PYTHONPATH=. alembic revision --autogenerate -m \"add file fields to paper\")",
+      "Bash(PYTHONPATH=. python -m alembic revision --autogenerate -m \"add file fields to paper\")",
+      "Bash(rm -f E:/paper-manager-project/backend/paperpilot.db E:/paper-manager-project/backend/tests/test_paperpilot.db)",
+      "Bash(PYTHONPATH=. python -m alembic revision --autogenerate -m \"initial schema\")",
+      "Bash(PYTHONPATH=. python -m alembic upgrade head)",
+      "Bash(PYTHONPATH=. python -c ' *)",
+      "Bash(PYTHONPATH=. python -c \"from main import app; print\\('OK'\\)\")",
+      "Bash(PYTHONPATH=. python -m pytest tests/test_auth.py tests/test_users.py -v)",
+      "Bash(PYTHONPATH=. python -m pytest tests/test_papers.py -v)",
+      "Bash(PYTHONPATH=. python -m pytest tests/ -v)"
     ]
   }
 }
