@@ -1,5 +1,8 @@
-from typing import Dict, Any
+"""AI分析服务 — 论文内容分析、摘要生成、关键词提取、论文推荐"""
+
+from typing import Dict, Any, List
 import json
+
 
 def analyze_paper(content: str) -> Dict[str, Any]:
     """分析论文内容"""
@@ -21,15 +24,18 @@ def analyze_paper(content: str) -> Dict[str, Any]:
         "created_at": "2023-01-01T00:00:00"
     }
 
+
 def generate_summary(content: str) -> str:
     """生成论文摘要"""
     # 实现摘要生成逻辑
     return "这是自动生成的论文摘要"
 
+
 def extract_keywords(content: str) -> List[str]:
     """提取关键词"""
     # 实现关键词提取逻辑
     return ["关键词1", "关键词2", "关键词3"]
+
 
 def recommend_papers(content: str) -> List[Dict[str, str]]:
     """推荐相关论文"""

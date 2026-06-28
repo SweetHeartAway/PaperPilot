@@ -1,3 +1,5 @@
+"""AI 路由 — 论文分析、摘要、推荐"""
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_db, get_current_user
@@ -23,22 +25,21 @@ def analyze_paper_content(
             detail=f"AI分析失败: {str(e)}"
         )
 
-@router.post("/summarize")
+@router.post("/summarize", status_code=status.HTTP_501_NOT_IMPLEMENTED)
 def summarize_paper(
     paper_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """生成论文摘要"""
-    # 实现论文摘要功能
-    return {"message": "摘要生成功能待实现"}
+    """生成论文摘要（功能待实现）"""
+    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="摘要生成功能待实现")
 
-@router.post("/recommend")
+
+@router.post("/recommend", status_code=status.HTTP_501_NOT_IMPLEMENTED)
 def recommend_papers(
     paper_id: int,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
-    """推荐相关论文"""
-    # 实现论文推荐功能
-    return {"message": "论文推荐功能待实现"}
+    """推荐相关论文（功能待实现）"""
+    raise HTTPException(status_code=status.HTTP_501_NOT_IMPLEMENTED, detail="论文推荐功能待实现")

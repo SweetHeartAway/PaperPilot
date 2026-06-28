@@ -1,7 +1,10 @@
+"""论文 ORM 模型"""
+
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.utils.database import Base
+
 
 class Paper(Base):
     __tablename__ = "papers"
@@ -22,7 +25,7 @@ class Paper(Base):
     is_favorite = Column(Boolean, default=False)
 
     user = relationship("User", back_populates="papers")
-    ai_analyses = relationship("AIAnalysis", back_populates="paper")
+    ai_analyses = relationship("AIAnalysis", back_populates="paper", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<Paper(id={self.id}, title={self.title}, user_id={self.user_id})>"

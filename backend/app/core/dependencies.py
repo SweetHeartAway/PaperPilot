@@ -1,7 +1,8 @@
+"""FastAPI 依赖注入 — JWT 认证、数据库会话"""
+
 from sqlalchemy.orm import Session
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from sqlalchemy.orm import Session
 from app.utils.database import get_db
 from app.utils.security import decode_token
 from app.models.user import User

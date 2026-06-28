@@ -1,3 +1,5 @@
+"""用户路由 — 个人/公开信息"""
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from app.core.dependencies import get_db, get_current_user

@@ -1,3 +1,5 @@
+"""论文 Pydantic 请求/响应模型"""
+
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from datetime import datetime
@@ -6,7 +8,7 @@ class PaperBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=500)
     abstract: Optional[str] = None
     authors: Optional[str] = None
-    publication_date: Optional[str] = None
+    publication_date: Optional[datetime] = None
     doi: Optional[str] = None
     is_favorite: bool = False
 
@@ -17,7 +19,7 @@ class PaperUpdate(BaseModel):
     title: Optional[str] = None
     abstract: Optional[str] = None
     authors: Optional[str] = None
-    publication_date: Optional[str] = None
+    publication_date: Optional[datetime] = None
     doi: Optional[str] = None
     is_favorite: Optional[bool] = None
 

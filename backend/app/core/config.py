@@ -1,3 +1,5 @@
+"""应用配置 — Pydantic Settings"""
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 

@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from app.core.config import settings
-from app.core.dependencies import get_db
 from app.api.v1 import auth, papers, users, ai
 from app.models import Base
 from app.utils.database import engine

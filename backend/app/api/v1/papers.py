@@ -1,3 +1,5 @@
+"""论文路由 — CRUD、PDF 上传/下载/删除"""
+
 import os
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from fastapi.responses import FileResponse
@@ -42,9 +44,13 @@ def read_papers(
 
 
 @router.get("/{paper_id}", response_model=Paper)
-def read_paper(paper_id: int, db: Session = Depends(get_db)):
+def read_paper(
+    paper_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """获取论文详情"""
-    db_paper = get_paper(db, paper_id=paper_id)
+    db_paper = get_paper(db, paper_id=paper_id, user_id=current_user.id)
     if db_paper is None:
         raise HTTPException(status_code=404, detail="论文不存在")
     return db_paper
@@ -92,7 +98,9 @@ def upload_file(
         result = upload_paper_file(db, paper_id, current_user.id, file)
         return result
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        detail = str(e)
+        status_code = 400 if "文件过大" in detail else 404
+        raise HTTPException(status_code=status_code, detail=detail)
 
 
 @router.get("/{paper_id}/download")
@@ -102,7 +110,7 @@ def download_file(
     current_user: User = Depends(get_current_user)
 ):
     """下载论文 PDF 文件"""
-    file_path, filename = download_paper_file(db, paper_id)
+    file_path, filename = download_paper_file(db, paper_id, current_user.id)
     if not file_path:
         raise HTTPException(status_code=404, detail="文件不存在")
     return FileResponse(

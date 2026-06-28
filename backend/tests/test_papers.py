@@ -1,8 +1,6 @@
 """论文管理模块测试（含 PDF 上传/下载/删除）"""
 
 import io
-import os
-import tempfile
 import pytest
 from fastapi.testclient import TestClient
 
@@ -131,7 +129,7 @@ class TestPaperUpload:
             files={"file": ("v1.pdf", io.BytesIO(MINI_PDF), "application/pdf")},
             headers=headers,
         )
-        old_uuid = test_client.get(f"/api/v1/papers/{paper_id}").json()["file_uuid"]
+        old_uuid = test_client.get(f"/api/v1/papers/{paper_id}", headers=headers).json()["file_uuid"]
 
         # 第二次上传覆盖
         new_content = MINI_PDF + b"x"
@@ -145,6 +143,23 @@ class TestPaperUpload:
         assert data["file_uuid"] != old_uuid  # UUID 变更
         assert data["original_filename"] == "v2.pdf"
         assert data["file_size"] == len(new_content)
+
+    def test_upload_file_too_large(self, test_client, monkeypatch):
+        """上传超过大小限制的文件被拒绝"""
+        import app.core.config
+        monkeypatch.setattr(app.core.config.settings, 'MAX_UPLOAD_SIZE', 10)
+
+        headers = _auth_header(test_client)
+        paper_id = _create_paper(test_client, headers)
+
+        large_content = b"X" * 20  # 20 bytes > 10 bytes limit
+        resp = test_client.post(
+            f"/api/v1/papers/{paper_id}/upload",
+            files={"file": ("large.pdf", io.BytesIO(large_content), "application/pdf")},
+            headers=headers,
+        )
+        assert resp.status_code == 400
+        assert "文件过大" in resp.json()["detail"]
 
 
 class TestPaperDownload:
@@ -204,7 +219,7 @@ class TestPaperDownload:
             files={"file": ("down.pdf", io.BytesIO(MINI_PDF), "application/pdf")},
             headers=headers,
         )
-        # 下载不需要所有权，但需要认证
+        # 下载需要所有权 + 认证
         test_client.post("/api/v1/auth/register", json={
             "email": "other2@test.com",
             "username": "otheruser2",
@@ -220,8 +235,7 @@ class TestPaperDownload:
             f"/api/v1/papers/{paper_id}/download",
             headers=other_headers,
         )
-        assert resp.status_code == 200
-        assert resp.content == MINI_PDF
+        assert resp.status_code == 404
 
 
 class TestPaperDeleteFile:

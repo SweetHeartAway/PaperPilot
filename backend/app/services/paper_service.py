@@ -1,5 +1,8 @@
+"""论文服务层 — CRUD 和文件管理"""
+
 import os
 import uuid
+from fastapi import UploadFile
 from sqlalchemy.orm import Session
 from app.models.paper import Paper
 from app.models.user import User
@@ -28,9 +31,12 @@ def get_papers(db: Session, user_id: int, skip: int = 0, limit: int = 100):
     return db.query(Paper).filter(Paper.user_id == user_id).offset(skip).limit(limit).all()
 
 
-def get_paper(db: Session, paper_id: int):
-    """获取论文详情"""
-    return db.query(Paper).filter(Paper.id == paper_id).first()
+def get_paper(db: Session, paper_id: int, user_id: int | None = None):
+    """获取论文详情（可选按 user_id 过滤）"""
+    query = db.query(Paper).filter(Paper.id == paper_id)
+    if user_id is not None:
+        query = query.filter(Paper.user_id == user_id)
+    return query.first()
 
 
 def update_paper(db: Session, paper_id: int, paper: PaperUpdate, user_id: int):
@@ -64,15 +70,13 @@ def delete_paper(db: Session, paper_id: int, user_id: int):
 
 def _get_upload_dir() -> str:
     """获取上传目录路径，不存在则创建"""
-    upload_dir = getattr(settings, 'UPLOAD_DIR', './uploads')
-    os.makedirs(upload_dir, exist_ok=True)
-    return upload_dir
+    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+    return settings.UPLOAD_DIR
 
 
 def _remove_file(file_uuid: str):
     """从磁盘删除文件"""
     upload_dir = _get_upload_dir()
-    # 尝试常见扩展名
     for ext in ['.pdf', '.png', '.jpg', '.jpeg', '.doc', '.docx']:
         file_path = os.path.join(upload_dir, f"{file_uuid}{ext}")
         if os.path.exists(file_path):
@@ -80,7 +84,7 @@ def _remove_file(file_uuid: str):
             return
 
 
-def upload_paper_file(db: Session, paper_id: int, user_id: int, file) -> Paper:
+def upload_paper_file(db: Session, paper_id: int, user_id: int, file: UploadFile) -> Paper:
     """上传论文文件"""
     db_paper = db.query(Paper).filter(Paper.id == paper_id, Paper.user_id == user_id).first()
     if not db_paper:
@@ -96,7 +100,11 @@ def upload_paper_file(db: Session, paper_id: int, user_id: int, file) -> Paper:
     ext = os.path.splitext(file.filename)[1] or '.pdf'
     file_path = os.path.join(upload_dir, f"{file_uuid}{ext}")
 
+    # 校验文件大小
     content = file.file.read()
+    if len(content) > settings.MAX_UPLOAD_SIZE:
+        raise ValueError(f"文件过大，最大允许 {settings.MAX_UPLOAD_SIZE // (1024*1024)}MB")
+
     with open(file_path, 'wb') as f:
         f.write(content)
 
@@ -111,9 +119,11 @@ def upload_paper_file(db: Session, paper_id: int, user_id: int, file) -> Paper:
     return db_paper
 
 
-def download_paper_file(db: Session, paper_id: int) -> tuple:
+def download_paper_file(db: Session, paper_id: int, user_id: int) -> tuple:
     """获取论文文件路径和原始文件名，供下载使用"""
-    db_paper = db.query(Paper).filter(Paper.id == paper_id).first()
+    db_paper = db.query(Paper).filter(
+        Paper.id == paper_id, Paper.user_id == user_id
+    ).first()
     if not db_paper or not db_paper.file_uuid:
         return None, None
 

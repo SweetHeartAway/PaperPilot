@@ -1,10 +1,13 @@
+"""用户服务层 — CRUD 和认证逻辑"""
+
+from typing import Optional
 from sqlalchemy.orm import Session
 from app.models.user import User
-from app.schemas.user import UserCreate
-from app.utils.security import get_password_hash, verify_password
+from app.schemas.user import UserCreate, UserUpdate
+from app.utils.security import get_password_hash
 
 
-def create_user(db: Session, user: UserCreate):
+def create_user(db: Session, user: UserCreate) -> User:
     """创建新用户"""
     hashed_password = get_password_hash(user.password)
     db_user = User(
@@ -33,17 +36,7 @@ def get_user_by_username(db: Session, username: str):
     return db.query(User).filter(User.username == username).first()
 
 
-def authenticate_user(db: Session, email: str, password: str = None):
-    """验证用户"""
-    user = get_user_by_email(db, email)
-    if not user:
-        return None
-    if password and not verify_password(password, user.hashed_password):
-        return None
-    return user
-
-
-def update_user(db: Session, user_id: int, user_data):
+def update_user(db: Session, user_id: int, user_data: UserUpdate) -> Optional[User]:
     """更新用户信息"""
     db_user = get_user_by_id(db, user_id)
     if not db_user:

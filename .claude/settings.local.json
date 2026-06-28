@@ -23,7 +23,10 @@
       "Bash(PYTHONPATH=. python -c \"from main import app; print\\('OK'\\)\")",
       "Bash(PYTHONPATH=. python -m pytest tests/test_auth.py tests/test_users.py -v)",
       "Bash(PYTHONPATH=. python -m pytest tests/test_papers.py -v)",
-      "Bash(PYTHONPATH=. python -m pytest tests/ -v)"
+      "Bash(PYTHONPATH=. python -m pytest tests/ -v)",
+      "Bash(mkdir -p .claude/skills/review-code .claude/skills/api-design)",
+      "Bash(mv .claude/skills/review-code.md .claude/skills/review-code/SKILL.md)",
+      "Bash(mv .claude/skills/api-design.md .claude/skills/api-design/SKILL.md)"
     ]
   }
 }
