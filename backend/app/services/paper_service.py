@@ -12,6 +12,12 @@ from app.core.config import settings
 
 def create_paper(db: Session, paper: PaperCreate, user_id: int):
     """创建新论文"""
+    # 检查 DOI 重复
+    if paper.doi:
+        existing = db.query(Paper).filter(Paper.doi == paper.doi).first()
+        if existing:
+            raise ValueError(f"DOI '{paper.doi}' 已被其他论文使用")
+
     db_paper = Paper(
         title=paper.title,
         abstract=paper.abstract,
@@ -45,7 +51,18 @@ def update_paper(db: Session, paper_id: int, paper: PaperUpdate, user_id: int):
     if not db_paper:
         return None
 
-    for key, value in paper.model_dump(exclude_unset=True).items():
+    update_data = paper.model_dump(exclude_unset=True)
+
+    # 检查 DOI 重复（排除自身）
+    if "doi" in update_data and update_data["doi"]:
+        existing = db.query(Paper).filter(
+            Paper.doi == update_data["doi"],
+            Paper.id != paper_id
+        ).first()
+        if existing:
+            raise ValueError(f"DOI '{update_data['doi']}' 已被其他论文使用")
+
+    for key, value in update_data.items():
         setattr(db_paper, key, value)
 
     db.commit()

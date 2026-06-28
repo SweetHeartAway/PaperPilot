@@ -55,8 +55,11 @@ def test_get_user_by_id(test_client):
     })
     user_id = me.json()["id"]
 
-    # 用ID查询
-    response = test_client.get(f"/api/v1/users/{user_id}")
+    # 用ID查询（需登录）
+    response = test_client.get(
+        f"/api/v1/users/{user_id}",
+        headers={"Authorization": f"Bearer {token}"}
+    )
     assert response.status_code == 200
     data = response.json()
     assert data["email"] == "byid@example.com"
@@ -64,8 +67,12 @@ def test_get_user_by_id(test_client):
 
 
 def test_get_user_not_found(test_client):
-    """测试查询不存在的用户"""
-    response = test_client.get("/api/v1/users/99999")
+    """测试查询不存在的用户（需登录）"""
+    token = _register_and_login(test_client, email="notfound@example.com", username="notfound")
+    response = test_client.get(
+        "/api/v1/users/99999",
+        headers={"Authorization": f"Bearer {token}"}
+    )
     assert response.status_code == 404
 
 

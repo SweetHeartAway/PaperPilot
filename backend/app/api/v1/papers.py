@@ -21,14 +21,17 @@ from app.services.paper_service import (
 router = APIRouter()
 
 
-@router.post("/", response_model=Paper)
+@router.post("/", response_model=Paper, status_code=status.HTTP_201_CREATED)
 def create_new_paper(
     paper: PaperCreate,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """创建新论文"""
-    return create_paper(db=db, paper=paper, user_id=current_user.id)
+    try:
+        return create_paper(db=db, paper=paper, user_id=current_user.id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 @router.get("/", response_model=list[Paper])
@@ -64,7 +67,10 @@ def update_existing_paper(
     current_user: User = Depends(get_current_user)
 ):
     """更新论文"""
-    db_paper = update_paper(db, paper_id=paper_id, paper=paper, user_id=current_user.id)
+    try:
+        db_paper = update_paper(db, paper_id=paper_id, paper=paper, user_id=current_user.id)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     if db_paper is None:
         raise HTTPException(status_code=404, detail="论文不存在")
     return db_paper

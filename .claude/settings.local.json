@@ -26,7 +26,10 @@
       "Bash(PYTHONPATH=. python -m pytest tests/ -v)",
       "Bash(mkdir -p .claude/skills/review-code .claude/skills/api-design)",
       "Bash(mv .claude/skills/review-code.md .claude/skills/review-code/SKILL.md)",
-      "Bash(mv .claude/skills/api-design.md .claude/skills/api-design/SKILL.md)"
+      "Bash(mv .claude/skills/api-design.md .claude/skills/api-design/SKILL.md)",
+      "Bash(PYTHONPATH=. python -m pytest tests/test_users.py -v)",
+      "Bash(python *)",
+      "Bash(PYTHONPATH=backend python *)"
     ]
   }
 }

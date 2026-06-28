@@ -17,8 +17,12 @@ def read_users_me(current_user: UserModel = Depends(get_current_user)):
 
 
 @router.get("/{user_id}", response_model=User)
-def read_user(user_id: int, db: Session = Depends(get_db)):
-    """获取用户信息"""
+def read_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: UserModel = Depends(get_current_user)
+):
+    """获取用户信息（需登录）"""
     db_user = get_user_by_id(db, user_id)
     if db_user is None:
         raise HTTPException(status_code=404, detail="用户不存在")
