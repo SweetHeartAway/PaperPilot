@@ -26,6 +26,18 @@ class Settings(BaseSettings):
     AI_MODEL: str = "gpt-4o-mini"  # 模型名称，切换模型时修改
     AI_MAX_TOKENS: int = 4096  # 最大输出 token 数
 
+    # Embedding 服务配置
+    EMBEDDING_PROVIDER: str = "openai"  # openai | jina | bge
+    EMBEDDING_MODEL: str = "text-embedding-3-small"  # 模型名称
+    EMBEDDING_API_KEY: str = ""  # 为空时复用 AI_API_KEY
+    EMBEDDING_BASE_URL: str = ""  # 为空时复用 AI_API_BASE_URL
+    BGE_MODEL_NAME: str = "BAAI/bge-small-zh-v1.5"  # BGE 本地模型
+
+    # 向量数据库配置
+    VECTOR_DB_PROVIDER: str = "chroma"  # chroma | milvus（扩展用）
+    CHROMA_PERSIST_DIR: str = "./chroma_db"  # Chroma 数据目录
+    VECTOR_COLLECTION_NAME: str = "papers"  # 集合名称
+
     # 文件上传配置
     UPLOAD_DIR: str = "./uploads"
     MAX_UPLOAD_SIZE: int = 50 * 1024 * 1024  # 50MB
