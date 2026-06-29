@@ -1,6 +1,6 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
-import MainLayout from './components/layout/MainLayout';
-import PaperListPage from './pages/PaperListPage';
+import { Routes, Route, Navigate } from "react-router-dom";
+import MainLayout from "./components/layout/MainLayout";
+import PaperListPage from "./pages/PaperListPage";
 
 function PlaceholderPage({ title }: { title: string }) {
   return (

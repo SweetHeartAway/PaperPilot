@@ -1,5 +1,5 @@
-import { create } from 'zustand';
-import { getToken, setToken, removeToken } from '../utils/token';
+import { create } from "zustand";
+import { getToken, setToken, removeToken } from "../utils/token";
 
 interface AuthState {
   token: string | null;

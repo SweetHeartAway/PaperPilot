@@ -1,8 +1,8 @@
-import client from './client';
-import type { Paper, PaperListParams } from '../types/paper';
+import client from "./client";
+import type { Paper, PaperListParams } from "../types/paper";
 
 export function fetchPapers(params?: PaperListParams): Promise<Paper[]> {
-  return client.get('/api/v1/papers/', { params }).then((res) => res.data);
+  return client.get("/api/v1/papers/", { params }).then((res) => res.data);
 }
 
 export function fetchPaper(id: number): Promise<Paper> {
@@ -16,7 +16,7 @@ export function createPaper(data: {
   doi?: string;
   tag_ids?: number[];
 }): Promise<Paper> {
-  return client.post('/api/v1/papers/', data).then((res) => res.data);
+  return client.post("/api/v1/papers/", data).then((res) => res.data);
 }
 
 export function updatePaper(

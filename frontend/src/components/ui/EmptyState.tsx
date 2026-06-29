@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
 interface EmptyStateProps {
   title?: string;
@@ -7,8 +7,8 @@ interface EmptyStateProps {
 }
 
 export default function EmptyState({
-  title = '暂无数据',
-  message = '当前没有可显示的内容',
+  title = "暂无数据",
+  message = "当前没有可显示的内容",
   action,
 }: EmptyStateProps) {
   return (

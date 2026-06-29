@@ -1,7 +1,7 @@
-import { useEffect, useCallback } from 'react';
-import { useAuthStore } from '../stores/authStore';
-import { getCurrentUser } from '../api/auth';
-import type { User } from '../types/user';
+import { useEffect, useCallback } from "react";
+import { useAuthStore } from "../stores/authStore";
+import { getCurrentUser } from "../api/auth";
+import type { User } from "../types/user";
 
 export function useAuth() {
   const store = useAuthStore();

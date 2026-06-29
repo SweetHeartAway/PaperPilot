@@ -1,4 +1,4 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink } from "react-router-dom";
 
 interface NavItem {
   to: string;
@@ -6,9 +6,9 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { to: '/papers', label: '论文' },
-  { to: '/tags', label: '标签' },
-  { to: '/profile', label: '个人中心' },
+  { to: "/papers", label: "论文" },
+  { to: "/tags", label: "标签" },
+  { to: "/profile", label: "个人中心" },
 ];
 
 export default function Sidebar() {
@@ -25,8 +25,8 @@ export default function Sidebar() {
             className={({ isActive }) =>
               `mb-1 flex items-center rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                 isActive
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  ? "bg-blue-50 text-blue-700"
+                  : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
               }`
             }
           >

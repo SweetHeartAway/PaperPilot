@@ -4,11 +4,7 @@ interface PaginationProps {
   onPageChange: (page: number) => void;
 }
 
-export default function Pagination({
-  currentPage,
-  totalPages,
-  onPageChange,
-}: PaginationProps) {
+export default function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
   if (totalPages <= 1) return null;
 
   const pages: number[] = [];
@@ -48,11 +44,9 @@ export default function Pagination({
           key={page}
           onClick={() => onPageChange(page)}
           className={`rounded-md px-3 py-2 text-sm transition-colors ${
-            page === currentPage
-              ? 'bg-blue-600 text-white'
-              : 'text-gray-600 hover:bg-gray-100'
+            page === currentPage ? "bg-blue-600 text-white" : "text-gray-600 hover:bg-gray-100"
           }`}
-          aria-current={page === currentPage ? 'page' : undefined}
+          aria-current={page === currentPage ? "page" : undefined}
         >
           {page}
         </button>

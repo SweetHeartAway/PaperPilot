@@ -1,4 +1,20 @@
 {
+  "hooks": {
+    "onFileUpdate": [
+      {
+        "glob": "backend/**/*.py",
+        "run": "cd /e/paper-manager-project/backend && PYTHONPATH=. python -m pytest tests/ -x --tb=short 2>&1",
+        "description": "Backend 代码变更后自动运行 pytest，失败时 Claude 自动修复直到 PASS"
+      }
+    ],
+    "onPreCommit": [
+      {
+        "glob": "backend/**/*.py",
+        "run": "cd /e/paper-manager-project/backend && PYTHONPATH=. python -m pytest tests/ -x --tb=short 2>&1",
+        "description": "Backend commit 前自动运行 pytest"
+      }
+    ]
+  },
   "permissions": {
     "allow": [
       "Bash(git init *)",
@@ -43,7 +59,11 @@
       "Bash(PYTHONPATH=. python -m pytest tests/ -v --tb=short)",
       "Bash(bash E:/paper-manager-project/.claude/hooks/MessageDisplay)",
       "Bash(echo \"Exit code: $?\")",
-      "Bash(cmd.exe /c \"E:\\\\paper-manager-project\\\\.claude\\\\hooks\\\\MessageDisplay.bat\")"
+      "Bash(cmd.exe /c \"E:\\\\paper-manager-project\\\\.claude\\\\hooks\\\\MessageDisplay.bat\")",
+      "Bash(git check-ignore *)",
+      "Bash(grep -n \"claude\" .gitignore)",
+      "Bash(git ls-files *)",
+      "Bash(cd /e/paper-manager-project/backend && PYTHONPATH=. python -m pytest *)"
     ]
   }
 }

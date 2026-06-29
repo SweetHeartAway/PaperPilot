@@ -1,13 +1,13 @@
-import axios from 'axios';
-import { useAuthStore } from '../stores/authStore';
+import axios from "axios";
+import { useAuthStore } from "../stores/authStore";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
 const client = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
   headers: {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   },
 });
 
@@ -27,7 +27,7 @@ client.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       useAuthStore.getState().clearAuth();
-      window.location.href = '/login';
+      window.location.href = "/login";
     }
     return Promise.reject(error);
   },

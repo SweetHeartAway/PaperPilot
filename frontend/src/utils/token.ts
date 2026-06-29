@@ -1,4 +1,4 @@
-const TOKEN_KEY = 'paperpilot_access_token';
+const TOKEN_KEY = "paperpilot_access_token";
 
 export function getToken(): string | null {
   try {
