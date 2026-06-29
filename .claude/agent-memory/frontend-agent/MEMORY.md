@@ -1,0 +1,1 @@
+- [Frontend project initialized](project-frontend-initialized.md) -- Vite 8 + React 19 + TS 6 + Tailwind v4, dependencies, API config
