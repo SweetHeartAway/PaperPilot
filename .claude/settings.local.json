@@ -1,17 +1,14 @@
 {
   "hooks": {
-    "onFileUpdate": [
+    "FileChanged": [
       {
-        "glob": "backend/**/*.py",
-        "run": "cd /e/paper-manager-project/backend && PYTHONPATH=. python -m pytest tests/ -x --tb=short 2>&1",
-        "description": "Backend 代码变更后自动运行 pytest，失败时 Claude 自动修复直到 PASS"
-      }
-    ],
-    "onPreCommit": [
-      {
-        "glob": "backend/**/*.py",
-        "run": "cd /e/paper-manager-project/backend && PYTHONPATH=. python -m pytest tests/ -x --tb=short 2>&1",
-        "description": "Backend commit 前自动运行 pytest"
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /e/paper-manager-project/backend && PYTHONPATH=. python -m pytest tests/ -x --tb=short 2>&1"
+          }
+        ],
+        "if": "backend/**/*.py"
       }
     ]
   },
@@ -49,6 +46,7 @@
       "Bash(git push *)",
       "Bash(PYTHONPATH=. python -m pytest tests/test_tags.py -v)",
       "Bash(PYTHONPATH=. python -m pytest tests/test_auth.py -v)",
+      "Bash(PYTHONPATH=. python -m pytest tests/test_papers.py -v)",
       "Bash(npm --version)",
       "Bash(npm create *)",
       "Bash(npm install *)",
@@ -63,7 +61,9 @@
       "Bash(git check-ignore *)",
       "Bash(grep -n \"claude\" .gitignore)",
       "Bash(git ls-files *)",
-      "Bash(cd /e/paper-manager-project/backend && PYTHONPATH=. python -m pytest *)"
+      "Bash(cd /e/paper-manager-project/backend && PYTHONPATH=. python -m pytest *)",
+      "Bash(PYTHONPATH=. python -m pytest tests/ -x --tb=short -v)",
+      "Bash(PYTHONPATH=. python *)"
     ]
   }
 }
