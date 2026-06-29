@@ -6,6 +6,7 @@ import time
 from datetime import UTC, datetime
 from typing import Any
 
+from app.core.config import settings
 from app.models.ai import AIAnalysis
 from app.services.ai_service import extract_keywords, generate_summary
 from app.services.paper_service import get_paper
@@ -174,7 +175,7 @@ def trigger_ai_summary(
         # 6. 更新记录为完成
         analysis.status = "completed"
         analysis.result = result_json
-        analysis.model_name = "stub-ai"  # Phase 3 替换为真实模型名
+        analysis.model_name = settings.AI_MODEL if settings.AI_API_KEY else "stub-ai"
         analysis.processing_time_ms = elapsed_ms
         analysis.completed_at = datetime.now(UTC)
         db.commit()

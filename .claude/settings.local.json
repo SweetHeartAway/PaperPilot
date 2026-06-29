@@ -1,17 +1,4 @@
 {
-  "hooks": {
-    "FileChanged": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "cd /e/paper-manager-project/backend && PYTHONPATH=. python -m pytest tests/ -x --tb=short 2>&1"
-          }
-        ],
-        "if": "backend/**/*.py"
-      }
-    ]
-  },
   "permissions": {
     "allow": [
       "Bash(git init *)",
@@ -63,7 +50,23 @@
       "Bash(git ls-files *)",
       "Bash(cd /e/paper-manager-project/backend && PYTHONPATH=. python -m pytest *)",
       "Bash(PYTHONPATH=. python -m pytest tests/ -x --tb=short -v)",
-      "Bash(PYTHONPATH=. python *)"
+      "Bash(PYTHONPATH=. python *)",
+      "Read(//e/e/paper-manager-project/backend/app/api/**)",
+      "Read(//e/e/paper-manager-project/frontend/src/**)",
+      "Read(//e/e/paper-manager-project/**)",
+      "Read(//e/e/paper-manager-project/.claude/**)"
+    ]
+  },
+  "hooks": {
+    "FileChanged": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /e/paper-manager-project/backend && PYTHONPATH=. python -m pytest tests/ -x --tb=short 2>&1"
+          }
+        ]
+      }
     ]
   }
 }
