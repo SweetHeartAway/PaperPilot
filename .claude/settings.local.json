@@ -32,7 +32,18 @@
       "Bash(PYTHONPATH=backend python *)",
       "Bash(git push *)",
       "Bash(PYTHONPATH=. python -m pytest tests/test_tags.py -v)",
-      "Bash(PYTHONPATH=. python -m pytest tests/test_auth.py -v)"
+      "Bash(PYTHONPATH=. python -m pytest tests/test_auth.py -v)",
+      "Bash(npm --version)",
+      "Bash(npm create *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(git add *)",
+      "Bash(xargs wc -l)",
+      "Bash(pre-commit install *)",
+      "Bash(PYTHONPATH=. python -m pytest tests/ -v --tb=short)",
+      "Bash(bash E:/paper-manager-project/.claude/hooks/MessageDisplay)",
+      "Bash(echo \"Exit code: $?\")",
+      "Bash(cmd.exe /c \"E:\\\\paper-manager-project\\\\.claude\\\\hooks\\\\MessageDisplay.bat\")"
     ]
   }
 }
