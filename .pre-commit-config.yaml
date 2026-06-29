@@ -41,3 +41,14 @@ repos:
         files: ^frontend/src/
         types_or: [ts, tsx]
         pass_filenames: false
+
+  # ─── Backend: Test Guard ──────────────────────────────────
+  - repo: local
+    hooks:
+      - id: pytest-check
+        name: pytest (block on failure)
+        entry: cmd /c "set PYTHONPATH=. && cd /d E:\paper-manager-project\backend && python -m pytest tests/ -x --tb=short"
+        language: system
+        files: ^backend/
+        types_or: [python, pyi]
+        pass_filenames: false
