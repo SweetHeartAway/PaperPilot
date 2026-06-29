@@ -1,4 +1,4 @@
-"""论文路由 — CRUD、PDF 上传/下载/删除"""
+"""论文路由 — CRUD、PDF 上传/下载/删除、AI Summary"""
 
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from fastapi.responses import FileResponse
@@ -6,9 +6,11 @@ from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user, get_db
 from app.models.user import User
+from app.schemas.ai import AIAnalysisStatusResponse, AIAnalysisTriggerRequest
 from app.schemas.paper import Paper, PaperCreate, PaperUpdate
 from app.schemas.tag import TagName
 from app.services import tag_service
+from app.services.ai_summary_service import get_ai_summary, trigger_ai_summary
 from app.services.paper_service import (
     create_paper,
     delete_paper,
@@ -171,3 +173,39 @@ def remove_tag_from_paper(
             status_code = status.HTTP_404_NOT_FOUND
         raise HTTPException(status_code=status_code, detail=detail)
     return None
+
+
+# ─── AI Summary ────────────────────────────────────────────────
+
+
+@router.get("/{paper_id}/ai-summary", response_model=AIAnalysisStatusResponse)
+def read_ai_summary(
+    paper_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """获取论文的 AI 分析结果（如尚未生成返回 404）"""
+    analysis = get_ai_summary(db, paper_id=paper_id, user_id=current_user.id)
+    if analysis is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="该论文尚未进行 AI 分析，请先 POST 触发",
+        )
+    return analysis
+
+
+@router.post("/{paper_id}/ai-summary", response_model=AIAnalysisStatusResponse)
+def create_ai_summary(
+    paper_id: int,
+    request: AIAnalysisTriggerRequest = AIAnalysisTriggerRequest(),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """触发论文 AI 分析（首次生成或强制重新生成）"""
+    return trigger_ai_summary(
+        db,
+        paper_id=paper_id,
+        user_id=current_user.id,
+        analysis_type=request.analysis_type,
+        force_regenerate=request.force_regenerate,
+    )
