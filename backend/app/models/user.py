@@ -19,6 +19,7 @@ class User(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     papers = relationship("Paper", back_populates="user")
+    prompt_templates = relationship("AIPromptTemplate", back_populates="user")
 
     def __repr__(self):
         return f"<User(id={self.id}, email={self.email}, username={self.username})>"
