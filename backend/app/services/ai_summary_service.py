@@ -1,6 +1,7 @@
 """论文 AI Summary 服务层 — 分析与缓存管理"""
 
 import json
+import logging
 import time
 from datetime import UTC, datetime
 from typing import Any
@@ -8,16 +9,34 @@ from typing import Any
 from app.models.ai import AIAnalysis
 from app.services.ai_service import extract_keywords, generate_summary
 from app.services.paper_service import get_paper
+from app.utils.pdf_extractor import extract_text_from_pdf
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
+logger = logging.getLogger(__name__)
+
 
 def _extract_text_from_paper(paper: Any) -> str:
-    """从论文对象提取可分析文本（Phase 1: 使用 abstract 字段）"""
+    """从论文对象提取可分析文本
+
+    优先级：
+    1. 使用 paper.abstract（用户填写的摘要）
+    2. 回退到 PDF 文件全文提取（需要已上传文件）
+    """
     if paper.abstract and paper.abstract.strip():
         return paper.abstract.strip()
-    # Phase 2: 将在此处添加 PDF 文本提取逻辑
-    raise ValueError("论文没有可分析的内容（摘要为空，且尚未支持 PDF 文本提取）")
+
+    # 回退：从 PDF 文件提取文本
+    if paper.file_path:
+        try:
+            text = extract_text_from_pdf(paper.file_path)
+            logger.info("从 PDF 提取文本成功: paper_id=%s, chars=%d", paper.id, len(text))
+            return text
+        except (FileNotFoundError, ValueError) as e:
+            logger.warning("PDF 文本提取失败: paper_id=%s, error=%s", paper.id, e)
+            raise ValueError(f"无法提取 PDF 文本: {e}")
+
+    raise ValueError("论文没有可分析的内容（摘要为空且未上传 PDF 文件）")
 
 
 def _build_result_dict(summary: str, keywords: list[str]) -> str:

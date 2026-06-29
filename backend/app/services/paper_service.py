@@ -1,13 +1,17 @@
 """论文服务层 — CRUD 和文件管理"""
 
+import logging
 import os
 import uuid
 
 from app.core.config import settings
+from app.models.ai import AIAnalysis
 from app.models.paper import Paper
 from app.schemas.paper import PaperCreate, PaperUpdate
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
+
+logger = logging.getLogger(__name__)
 
 
 def create_paper(db: Session, paper: PaperCreate, user_id: int):
@@ -100,6 +104,27 @@ def _remove_file(file_uuid: str):
             return
 
 
+def _invalidate_ai_analyses(db: Session, paper_id: int) -> int:
+    """失效论文的 AI 分析缓存
+
+    文件重新上传后，旧的 AI 分析结果已不准确，标记为 stale。
+
+    Returns:
+        失效的记录条数
+    """
+    stale = (
+        db.query(AIAnalysis)
+        .filter(
+            AIAnalysis.paper_id == paper_id,
+            AIAnalysis.status == "completed",
+        )
+        .all()
+    )
+    for analysis in stale:
+        analysis.status = "stale"
+    return len(stale)
+
+
 def upload_paper_file(db: Session, paper_id: int, user_id: int, file: UploadFile) -> Paper:
     """上传论文文件"""
     db_paper = db.query(Paper).filter(Paper.id == paper_id, Paper.user_id == user_id).first()
@@ -130,8 +155,13 @@ def upload_paper_file(db: Session, paper_id: int, user_id: int, file: UploadFile
     db_paper.file_size = len(content)
     db_paper.file_path = file_path
 
+    # 文件变更后，自动失效旧的 AI 分析缓存
+    stale_count = _invalidate_ai_analyses(db, paper_id)
+
     db.commit()
     db.refresh(db_paper)
+    if stale_count > 0:
+        logger.info("已失效 %d 条 AI 分析缓存: paper_id=%s", stale_count, paper_id)
     return db_paper
 
 

@@ -17,6 +17,7 @@ class AIAnalysis(Base):
     # 状态管理
     status = Column(String(20), nullable=False, default="pending")
     # pending → processing → completed | failed
+    # completed → stale（文件重新上传后自动失效）
 
     # 结果
     result = Column(Text, nullable=True)  # JSON 结构化结果，失败时为 None
