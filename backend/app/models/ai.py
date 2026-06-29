@@ -1,8 +1,9 @@
 """AI 分析记录 ORM 模型"""
 
-from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
 from app.utils.database import Base
 
 

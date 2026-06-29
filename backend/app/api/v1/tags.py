@@ -2,10 +2,10 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
-from app.core.dependencies import get_db, get_current_user
+
+from app.core.dependencies import get_current_user, get_db
 from app.models.user import User
-from app.schemas.tag import Tag, TagCreate, TagUpdate, TagDetail
+from app.schemas.tag import Tag, TagCreate, TagDetail, TagUpdate
 from app.services import tag_service
 
 router = APIRouter()
@@ -24,7 +24,7 @@ def create_new_tag(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.get("/", response_model=List[Tag])
+@router.get("/", response_model=list[Tag])
 def read_tags(
     skip: int = 0,
     limit: int = 100,

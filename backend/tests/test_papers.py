@@ -1,9 +1,8 @@
 """论文管理模块测试（含 PDF 上传/下载/删除）"""
 
 import io
-import pytest
-from fastapi.testclient import TestClient
 
+from fastapi.testclient import TestClient
 
 # 最小的有效 PDF 文件内容
 MINI_PDF = (
@@ -18,26 +17,36 @@ MINI_PDF = (
 
 def _auth_header(test_client: TestClient) -> dict:
     """注册并登录，返回 Authorization header"""
-    test_client.post("/api/v1/auth/register", json={
-        "email": "paper@test.com",
-        "username": "paperuser",
-        "password": "password123",
-    })
-    resp = test_client.post("/api/v1/auth/login", data={
-        "username": "paper@test.com",
-        "password": "password123",
-    })
+    test_client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": "paper@test.com",
+            "username": "paperuser",
+            "password": "password123",
+        },
+    )
+    resp = test_client.post(
+        "/api/v1/auth/login",
+        data={
+            "username": "paper@test.com",
+            "password": "password123",
+        },
+    )
     token = resp.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
 
 
 def _create_paper(test_client: TestClient, headers: dict) -> int:
     """创建一篇测试论文，返回 paper_id"""
-    resp = test_client.post("/api/v1/papers/", json={
-        "title": "测试论文",
-        "abstract": "摘要内容",
-        "authors": "作者",
-    }, headers=headers)
+    resp = test_client.post(
+        "/api/v1/papers/",
+        json={
+            "title": "测试论文",
+            "abstract": "摘要内容",
+            "authors": "作者",
+        },
+        headers=headers,
+    )
     return resp.json()["id"]
 
 
@@ -99,15 +108,21 @@ class TestPaperUpload:
         paper_id = _create_paper(test_client, headers)
 
         # 用另一个账号尝试上传
-        test_client.post("/api/v1/auth/register", json={
-            "email": "other@test.com",
-            "username": "otheruser",
-            "password": "password123",
-        })
-        resp2 = test_client.post("/api/v1/auth/login", data={
-            "username": "other@test.com",
-            "password": "password123",
-        })
+        test_client.post(
+            "/api/v1/auth/register",
+            json={
+                "email": "other@test.com",
+                "username": "otheruser",
+                "password": "password123",
+            },
+        )
+        resp2 = test_client.post(
+            "/api/v1/auth/login",
+            data={
+                "username": "other@test.com",
+                "password": "password123",
+            },
+        )
         other_token = resp2.json()["access_token"]
         other_headers = {"Authorization": f"Bearer {other_token}"}
 
@@ -129,7 +144,9 @@ class TestPaperUpload:
             files={"file": ("v1.pdf", io.BytesIO(MINI_PDF), "application/pdf")},
             headers=headers,
         )
-        old_uuid = test_client.get(f"/api/v1/papers/{paper_id}", headers=headers).json()["file_uuid"]
+        old_uuid = test_client.get(f"/api/v1/papers/{paper_id}", headers=headers).json()[
+            "file_uuid"
+        ]
 
         # 第二次上传覆盖
         new_content = MINI_PDF + b"x"
@@ -147,7 +164,8 @@ class TestPaperUpload:
     def test_upload_file_too_large(self, test_client, monkeypatch):
         """上传超过大小限制的文件被拒绝"""
         import app.core.config
-        monkeypatch.setattr(app.core.config.settings, 'MAX_UPLOAD_SIZE', 10)
+
+        monkeypatch.setattr(app.core.config.settings, "MAX_UPLOAD_SIZE", 10)
 
         headers = _auth_header(test_client)
         paper_id = _create_paper(test_client, headers)
@@ -220,15 +238,21 @@ class TestPaperDownload:
             headers=headers,
         )
         # 下载需要所有权 + 认证
-        test_client.post("/api/v1/auth/register", json={
-            "email": "other2@test.com",
-            "username": "otheruser2",
-            "password": "password123",
-        })
-        resp2 = test_client.post("/api/v1/auth/login", data={
-            "username": "other2@test.com",
-            "password": "password123",
-        })
+        test_client.post(
+            "/api/v1/auth/register",
+            json={
+                "email": "other2@test.com",
+                "username": "otheruser2",
+                "password": "password123",
+            },
+        )
+        resp2 = test_client.post(
+            "/api/v1/auth/login",
+            data={
+                "username": "other2@test.com",
+                "password": "password123",
+            },
+        )
         other_headers = {"Authorization": f"Bearer {resp2.json()['access_token']}"}
 
         resp = test_client.get(
@@ -307,15 +331,21 @@ class TestPaperDeleteFile:
             headers=headers,
         )
 
-        test_client.post("/api/v1/auth/register", json={
-            "email": "other3@test.com",
-            "username": "otheruser3",
-            "password": "password123",
-        })
-        resp2 = test_client.post("/api/v1/auth/login", data={
-            "username": "other3@test.com",
-            "password": "password123",
-        })
+        test_client.post(
+            "/api/v1/auth/register",
+            json={
+                "email": "other3@test.com",
+                "username": "otheruser3",
+                "password": "password123",
+            },
+        )
+        resp2 = test_client.post(
+            "/api/v1/auth/login",
+            data={
+                "username": "other3@test.com",
+                "password": "password123",
+            },
+        )
         other_headers = {"Authorization": f"Bearer {resp2.json()['access_token']}"}
 
         resp = test_client.delete(

@@ -1,10 +1,10 @@
 """密码哈希和 JWT 令牌工具"""
 
-from passlib.context import CryptContext
-from datetime import datetime, timedelta, timezone
-from typing import Optional
-from jose import JWTError, jwt
+from datetime import UTC, datetime, timedelta
+
 from app.core.config import settings
+from jose import JWTError, jwt
+from passlib.context import CryptContext
 
 # 密码哈希配置
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -23,21 +23,19 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
     """创建访问令牌"""
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
+        expire = datetime.now(UTC) + expires_delta
     else:
-        expire = datetime.now(timezone.utc) + timedelta(
-            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
-        )
+        expire = datetime.now(UTC) + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
 
-def decode_token(token: str) -> Optional[dict]:
+def decode_token(token: str) -> dict | None:
     """解码令牌"""
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[ALGORITHM])

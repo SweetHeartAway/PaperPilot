@@ -1,10 +1,10 @@
 """标签 ORM 模型"""
 
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Table
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Table
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from app.utils.database import Base
 
+from app.utils.database import Base
 
 # 论文-标签多对多关联表
 paper_tags = Table(
@@ -17,6 +17,7 @@ paper_tags = Table(
 
 class Tag(Base):
     """标签模型"""
+
     __tablename__ = "tags"
 
     id = Column(Integer, primary_key=True, index=True)

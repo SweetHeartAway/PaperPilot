@@ -1,13 +1,14 @@
-import pytest
 import os
 import tempfile
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from app.utils.database import Base, get_db
+
+import pytest
 from app.core.config import settings
 
 # 提前导入所有模型，确保Base.metadata已有表信息
-from app.models import User, Paper, AIAnalysis, Tag  # noqa: F401
+from app.models import AIAnalysis, Paper, Tag, User  # noqa: F401
+from app.utils.database import Base, get_db
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
 
 # 使用独立的测试数据库文件
 TEST_DB_PATH = os.path.join(os.path.dirname(__file__), "test_paperpilot.db")
@@ -58,5 +59,6 @@ def test_client(db_session):
 
     # 清理临时上传目录
     import shutil
+
     if os.path.exists(tmp_upload):
         shutil.rmtree(tmp_upload)

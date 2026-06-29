@@ -2,12 +2,12 @@
 
 import os
 import uuid
+
+from app.core.config import settings
+from app.models.paper import Paper
+from app.schemas.paper import PaperCreate, PaperUpdate
 from fastapi import UploadFile
 from sqlalchemy.orm import Session
-from app.models.paper import Paper
-from app.models.user import User
-from app.schemas.paper import PaperCreate, PaperUpdate
-from app.core.config import settings
 
 
 def create_paper(db: Session, paper: PaperCreate, user_id: int):
@@ -24,7 +24,7 @@ def create_paper(db: Session, paper: PaperCreate, user_id: int):
         authors=paper.authors,
         publication_date=paper.publication_date,
         doi=paper.doi,
-        user_id=user_id
+        user_id=user_id,
     )
     db.add(db_paper)
     db.commit()
@@ -55,10 +55,9 @@ def update_paper(db: Session, paper_id: int, paper: PaperUpdate, user_id: int):
 
     # 检查 DOI 重复（排除自身）
     if "doi" in update_data and update_data["doi"]:
-        existing = db.query(Paper).filter(
-            Paper.doi == update_data["doi"],
-            Paper.id != paper_id
-        ).first()
+        existing = (
+            db.query(Paper).filter(Paper.doi == update_data["doi"], Paper.id != paper_id).first()
+        )
         if existing:
             raise ValueError(f"DOI '{update_data['doi']}' 已被其他论文使用")
 
@@ -94,7 +93,7 @@ def _get_upload_dir() -> str:
 def _remove_file(file_uuid: str):
     """从磁盘删除文件"""
     upload_dir = _get_upload_dir()
-    for ext in ['.pdf', '.png', '.jpg', '.jpeg', '.doc', '.docx']:
+    for ext in [".pdf", ".png", ".jpg", ".jpeg", ".doc", ".docx"]:
         file_path = os.path.join(upload_dir, f"{file_uuid}{ext}")
         if os.path.exists(file_path):
             os.remove(file_path)
@@ -114,7 +113,7 @@ def upload_paper_file(db: Session, paper_id: int, user_id: int, file: UploadFile
     # 生成唯一 ID 并保存文件
     file_uuid = str(uuid.uuid4())
     upload_dir = _get_upload_dir()
-    ext = os.path.splitext(file.filename)[1] or '.pdf'
+    ext = os.path.splitext(file.filename)[1] or ".pdf"
     file_path = os.path.join(upload_dir, f"{file_uuid}{ext}")
 
     # 校验文件大小
@@ -122,7 +121,7 @@ def upload_paper_file(db: Session, paper_id: int, user_id: int, file: UploadFile
     if len(content) > settings.MAX_UPLOAD_SIZE:
         raise ValueError(f"文件过大，最大允许 {settings.MAX_UPLOAD_SIZE // (1024*1024)}MB")
 
-    with open(file_path, 'wb') as f:
+    with open(file_path, "wb") as f:
         f.write(content)
 
     # 更新数据库记录
@@ -138,17 +137,15 @@ def upload_paper_file(db: Session, paper_id: int, user_id: int, file: UploadFile
 
 def download_paper_file(db: Session, paper_id: int, user_id: int) -> tuple:
     """获取论文文件路径和原始文件名，供下载使用"""
-    db_paper = db.query(Paper).filter(
-        Paper.id == paper_id, Paper.user_id == user_id
-    ).first()
+    db_paper = db.query(Paper).filter(Paper.id == paper_id, Paper.user_id == user_id).first()
     if not db_paper or not db_paper.file_uuid:
         return None, None
 
     upload_dir = _get_upload_dir()
-    ext = '.pdf'
+    ext = ".pdf"
     # 从原文件名推断扩展名
     if db_paper.original_filename:
-        ext = os.path.splitext(db_paper.original_filename)[1] or '.pdf'
+        ext = os.path.splitext(db_paper.original_filename)[1] or ".pdf"
 
     file_path = os.path.join(upload_dir, f"{db_paper.file_uuid}{ext}")
     if not os.path.exists(file_path):

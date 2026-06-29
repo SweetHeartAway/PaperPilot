@@ -1,30 +1,35 @@
 """标签功能测试 — CRUD + 论文标签关联"""
 
-import pytest
 from fastapi.testclient import TestClient
-
 
 # ---------------------------------------------------------------------------
 # 辅助函数
 # ---------------------------------------------------------------------------
 
+
 def register_user(test_client: TestClient, suffix: str = "") -> dict:
     """注册用户并返回用户信息"""
-    resp = test_client.post("/api/v1/auth/register", json={
-        "email": f"tag{suffix}@example.com",
-        "username": f"taguser{suffix}",
-        "password": "testpass123",
-    })
+    resp = test_client.post(
+        "/api/v1/auth/register",
+        json={
+            "email": f"tag{suffix}@example.com",
+            "username": f"taguser{suffix}",
+            "password": "testpass123",
+        },
+    )
     return resp.json()
 
 
 def get_token(test_client: TestClient, suffix: str = "") -> str:
     """注册+登录，返回 Bearer token"""
     register_user(test_client, suffix)
-    resp = test_client.post("/api/v1/auth/login", data={
-        "username": f"tag{suffix}@example.com",
-        "password": "testpass123",
-    })
+    resp = test_client.post(
+        "/api/v1/auth/login",
+        data={
+            "username": f"tag{suffix}@example.com",
+            "password": "testpass123",
+        },
+    )
     return resp.json()["access_token"]
 
 
@@ -37,13 +42,16 @@ def auth_header(token: str) -> dict:
 # 标签 CRUD
 # ---------------------------------------------------------------------------
 
+
 class TestCreateTag:
     """创建标签"""
 
     def test_create_tag_success(self, test_client):
         """正常创建标签"""
         token = get_token(test_client)
-        resp = test_client.post("/api/v1/tags/", json={"name": "机器学习"}, headers=auth_header(token))
+        resp = test_client.post(
+            "/api/v1/tags/", json={"name": "机器学习"}, headers=auth_header(token)
+        )
         assert resp.status_code == 201
         data = resp.json()
         assert data["name"] == "机器学习"
@@ -54,7 +62,9 @@ class TestCreateTag:
         """重复名称返回 400"""
         token = get_token(test_client)
         test_client.post("/api/v1/tags/", json={"name": "深度学习"}, headers=auth_header(token))
-        resp = test_client.post("/api/v1/tags/", json={"name": "深度学习"}, headers=auth_header(token))
+        resp = test_client.post(
+            "/api/v1/tags/", json={"name": "深度学习"}, headers=auth_header(token)
+        )
         assert resp.status_code == 400
         assert "已存在" in resp.json()["detail"]
 
@@ -66,7 +76,9 @@ class TestCreateTag:
     def test_create_tag_trim_whitespace(self, test_client):
         """前后空格自动去除"""
         token = get_token(test_client)
-        resp = test_client.post("/api/v1/tags/", json={"name": "  计算机视觉  "}, headers=auth_header(token))
+        resp = test_client.post(
+            "/api/v1/tags/", json={"name": "  计算机视觉  "}, headers=auth_header(token)
+        )
         assert resp.status_code == 201
         assert resp.json()["name"] == "计算机视觉"
 
@@ -106,7 +118,9 @@ class TestGetTag:
     def test_get_tag_detail(self, test_client):
         """获取标签详情（含 paper_count）"""
         token = get_token(test_client)
-        create_resp = test_client.post("/api/v1/tags/", json={"name": "数据挖掘"}, headers=auth_header(token))
+        create_resp = test_client.post(
+            "/api/v1/tags/", json={"name": "数据挖掘"}, headers=auth_header(token)
+        )
         tag_id = create_resp.json()["id"]
 
         resp = test_client.get(f"/api/v1/tags/{tag_id}", headers=auth_header(token))
@@ -129,10 +143,16 @@ class TestUpdateTag:
     def test_update_tag_success(self, test_client):
         """正常更新标签名称"""
         token = get_token(test_client)
-        create_resp = test_client.post("/api/v1/tags/", json={"name": "AI"}, headers=auth_header(token))
+        create_resp = test_client.post(
+            "/api/v1/tags/", json={"name": "AI"}, headers=auth_header(token)
+        )
         tag_id = create_resp.json()["id"]
 
-        resp = test_client.put(f"/api/v1/tags/{tag_id}", json={"name": "Artificial Intelligence"}, headers=auth_header(token))
+        resp = test_client.put(
+            f"/api/v1/tags/{tag_id}",
+            json={"name": "Artificial Intelligence"},
+            headers=auth_header(token),
+        )
         assert resp.status_code == 200
         assert resp.json()["name"] == "Artificial Intelligence"
 
@@ -140,17 +160,23 @@ class TestUpdateTag:
         """更新到已存在的名称返回 400"""
         token = get_token(test_client)
         test_client.post("/api/v1/tags/", json={"name": "CV"}, headers=auth_header(token))
-        create_resp = test_client.post("/api/v1/tags/", json={"name": "NLP"}, headers=auth_header(token))
+        create_resp = test_client.post(
+            "/api/v1/tags/", json={"name": "NLP"}, headers=auth_header(token)
+        )
         tag_id = create_resp.json()["id"]
 
-        resp = test_client.put(f"/api/v1/tags/{tag_id}", json={"name": "CV"}, headers=auth_header(token))
+        resp = test_client.put(
+            f"/api/v1/tags/{tag_id}", json={"name": "CV"}, headers=auth_header(token)
+        )
         assert resp.status_code == 400
         assert "已存在" in resp.json()["detail"]
 
     def test_update_tag_not_found(self, test_client):
         """不存在的标签返回 404"""
         token = get_token(test_client)
-        resp = test_client.put("/api/v1/tags/9999", json={"name": "new-name"}, headers=auth_header(token))
+        resp = test_client.put(
+            "/api/v1/tags/9999", json={"name": "new-name"}, headers=auth_header(token)
+        )
         assert resp.status_code == 404
 
 
@@ -160,7 +186,9 @@ class TestDeleteTag:
     def test_delete_tag_success(self, test_client):
         """正常删除返回 204"""
         token = get_token(test_client)
-        create_resp = test_client.post("/api/v1/tags/", json={"name": "to-delete"}, headers=auth_header(token))
+        create_resp = test_client.post(
+            "/api/v1/tags/", json={"name": "to-delete"}, headers=auth_header(token)
+        )
         tag_id = create_resp.json()["id"]
 
         resp = test_client.delete(f"/api/v1/tags/{tag_id}", headers=auth_header(token))
@@ -181,14 +209,19 @@ class TestDeleteTag:
 # 论文-标签关联
 # ---------------------------------------------------------------------------
 
+
 class TestAddTagToPaper:
     """给论文添加标签"""
 
     def _create_paper(self, test_client, token: str) -> dict:
         """辅助：创建一篇论文并返回响应"""
-        resp = test_client.post("/api/v1/papers/", json={
-            "title": "测试论文",
-        }, headers=auth_header(token))
+        resp = test_client.post(
+            "/api/v1/papers/",
+            json={
+                "title": "测试论文",
+            },
+            headers=auth_header(token),
+        )
         return resp.json()
 
     def test_add_tag_to_paper(self, test_client):
@@ -265,10 +298,14 @@ class TestRemoveTagFromPaper:
 
     def _create_paper_with_tag(self, test_client, token: str, tag_name: str = "removable") -> tuple:
         """辅助：创建论文并添加标签，返回 (paper_id, tag_id)"""
-        paper_resp = test_client.post("/api/v1/papers/", json={"title": "Remove Test"}, headers=auth_header(token))
+        paper_resp = test_client.post(
+            "/api/v1/papers/", json={"title": "Remove Test"}, headers=auth_header(token)
+        )
         paper = paper_resp.json()
 
-        tag_resp = test_client.post("/api/v1/tags/", json={"name": tag_name}, headers=auth_header(token))
+        tag_resp = test_client.post(
+            "/api/v1/tags/", json={"name": tag_name}, headers=auth_header(token)
+        )
         tag_id = tag_resp.json()["id"]
 
         test_client.post(
@@ -299,7 +336,9 @@ class TestRemoveTagFromPaper:
         paper_id, _ = self._create_paper_with_tag(test_client, token)
 
         # 创建另一个未关联的标签
-        tag_resp = test_client.post("/api/v1/tags/", json={"name": "not-associated"}, headers=auth_header(token))
+        tag_resp = test_client.post(
+            "/api/v1/tags/", json={"name": "not-associated"}, headers=auth_header(token)
+        )
         other_tag_id = tag_resp.json()["id"]
 
         resp = test_client.delete(
@@ -311,7 +350,9 @@ class TestRemoveTagFromPaper:
     def test_remove_tag_paper_not_found(self, test_client):
         """论文不存在返回 404"""
         token = get_token(test_client)
-        tag_resp = test_client.post("/api/v1/tags/", json={"name": "orphan"}, headers=auth_header(token))
+        tag_resp = test_client.post(
+            "/api/v1/tags/", json={"name": "orphan"}, headers=auth_header(token)
+        )
         tag_id = tag_resp.json()["id"]
 
         resp = test_client.delete(
@@ -323,7 +364,9 @@ class TestRemoveTagFromPaper:
     def test_remove_tag_not_found(self, test_client):
         """标签不存在返回 404"""
         token = get_token(test_client)
-        paper_resp = test_client.post("/api/v1/papers/", json={"title": "Missing Tag"}, headers=auth_header(token))
+        paper_resp = test_client.post(
+            "/api/v1/papers/", json={"title": "Missing Tag"}, headers=auth_header(token)
+        )
         paper_id = paper_resp.json()["id"]
 
         resp = test_client.delete(
@@ -340,10 +383,14 @@ class TestDeleteTagCascades:
         """删除标签后，论文中不再包含该标签"""
         token = get_token(test_client)
         # 创建论文并添加标签
-        paper_resp = test_client.post("/api/v1/papers/", json={"title": "Cascade Test"}, headers=auth_header(token))
+        paper_resp = test_client.post(
+            "/api/v1/papers/", json={"title": "Cascade Test"}, headers=auth_header(token)
+        )
         paper_id = paper_resp.json()["id"]
 
-        test_client.post(f"/api/v1/papers/{paper_id}/tags", json={"name": "cascade"}, headers=auth_header(token))
+        test_client.post(
+            f"/api/v1/papers/{paper_id}/tags", json={"name": "cascade"}, headers=auth_header(token)
+        )
 
         # 获取标签 ID
         tag_resp = test_client.get("/api/v1/tags/", headers=auth_header(token))

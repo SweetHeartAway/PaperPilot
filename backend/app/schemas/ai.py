@@ -1,8 +1,8 @@
 """AI 分析请求/响应 Pydantic 模型"""
 
-from pydantic import BaseModel, Field
-from typing import Optional
 from datetime import datetime
+
+from pydantic import BaseModel, Field
 
 
 class AIAnalysisRequest(BaseModel):
@@ -14,6 +14,6 @@ class AIAnalysisResponse(BaseModel):
     analysis_id: int
     analysis_type: str
     result: str
-    created_at: Optional[datetime] = None
+    created_at: datetime | None = None
 
     model_config = {"from_attributes": True}

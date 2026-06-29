@@ -1,0 +1,23 @@
+# PaperPilot pre-commit 配置
+# 安装：pip install pre-commit && pre-commit install
+# 手动运行所有钩子：pre-commit run --all-files
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.5
+    hooks:
+      - id: ruff
+        name: ruff-lint (auto-fix)
+        args:
+          - --fix
+          - --exit-non-zero-on-fix
+        files: ^backend/
+        types_or: [python, pyi]
+
+  - repo: https://github.com/psf/black-pre-commit-mirror
+    rev: 25.1.0
+    hooks:
+      - id: black
+        name: black-format
+        files: ^backend/
+        types_or: [python, pyi]

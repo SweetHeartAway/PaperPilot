@@ -1,9 +1,9 @@
 """标签服务层 — CRUD 和论文标签关联"""
 
-from sqlalchemy.orm import Session
-from app.models.tag import Tag
 from app.models.paper import Paper
+from app.models.tag import Tag
 from app.schemas.tag import TagCreate, TagUpdate
+from sqlalchemy.orm import Session
 
 
 def create_tag(db: Session, tag: TagCreate):

@@ -1,8 +1,8 @@
 """数据库引擎和会话管理"""
 
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
 from app.core.config import settings
+from sqlalchemy import create_engine
+from sqlalchemy.orm import declarative_base, sessionmaker
 
 # 创建数据库引擎
 engine = create_engine(settings.DATABASE_URL, connect_args={"check_same_thread": False})
@@ -12,6 +12,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # 创建基类
 Base = declarative_base()
+
 
 def get_db():
     """获取数据库会话"""
