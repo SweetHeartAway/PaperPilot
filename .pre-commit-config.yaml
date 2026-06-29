@@ -3,6 +3,7 @@
 # 手动运行所有钩子：pre-commit run --all-files
 
 repos:
+  # ─── Backend: Python ──────────────────────────────────────
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.11.5
     hooks:
@@ -21,3 +22,22 @@ repos:
         name: black-format
         files: ^backend/
         types_or: [python, pyi]
+
+  # ─── Frontend: TypeScript / React / CSS ───────────────────
+  - repo: local
+    hooks:
+      - id: frontend-lint
+        name: frontend-lint (oxlint)
+        entry: cmd /c "cd frontend && npm run lint"
+        language: system
+        files: ^frontend/src/
+        types_or: [ts, tsx]
+        pass_filenames: false
+
+      - id: frontend-format
+        name: frontend-format (prettier)
+        entry: cmd /c "cd frontend && npm run format"
+        language: system
+        files: ^frontend/src/
+        types_or: [ts, tsx]
+        pass_filenames: false
