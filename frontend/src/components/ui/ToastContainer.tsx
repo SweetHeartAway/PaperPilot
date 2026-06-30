@@ -43,12 +43,10 @@ const colors: Record<ToastType, { bg: string; border: string; icon: string; text
 /* ─── 单条 Toast ─── */
 
 function ToastItem({
-  id,
   type,
   message,
   onDismiss,
 }: {
-  id: string;
   type: ToastType;
   message: string;
   onDismiss: () => void;
@@ -163,7 +161,6 @@ export default function ToastContainer() {
       {toasts.map((toast) => (
         <ToastItem
           key={toast.id}
-          id={toast.id}
           type={toast.type}
           message={toast.message}
           onDismiss={() => remove(toast.id)}

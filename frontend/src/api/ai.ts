@@ -1,10 +1,21 @@
+import { isAxiosError } from "axios";
 import client from "./client";
-import type { AIAnalysis, PaperRecommendation } from "../types/ai";
+import type { AIAnalysisStatus } from "../types/ai";
 
-export function fetchAIAnalysis(paperId: number): Promise<AIAnalysis> {
-  return client.get(`/api/v1/ai/analysis/${paperId}`).then((res) => res.data);
+/** 获取论文 AI 分析结果（返回 null 表示尚未分析） */
+export async function fetchPaperAISummary(paperId: number): Promise<AIAnalysisStatus | null> {
+  try {
+    const res = await client.get(`/api/v1/papers/${paperId}/ai-summary`);
+    return res.data;
+  } catch (err: unknown) {
+    if (isAxiosError(err) && err.response?.status === 404) {
+      return null;
+    }
+    throw err;
+  }
 }
 
-export function fetchRecommendations(paperId: number): Promise<PaperRecommendation[]> {
-  return client.get(`/api/v1/ai/recommendations/${paperId}`).then((res) => res.data);
+/** 触发论文 AI 分析 */
+export function triggerPaperAISummary(paperId: number): Promise<AIAnalysisStatus> {
+  return client.post(`/api/v1/papers/${paperId}/ai-summary`).then((res) => res.data);
 }

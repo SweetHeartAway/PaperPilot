@@ -45,6 +45,21 @@ export function deletePaper(id: number): Promise<void> {
   return client.delete(`/api/v1/papers/${id}`).then((res) => res.data);
 }
 
+/** 为论文添加标签（标签已存在则自动关联） */
+export function addPaperTag(paperId: number, name: string): Promise<Paper> {
+  return client.post(`/api/v1/papers/${paperId}/tags`, { name }).then((res) => res.data);
+}
+
+/** 从论文移除标签 */
+export function removePaperTag(paperId: number, tagId: number): Promise<void> {
+  return client.delete(`/api/v1/papers/${paperId}/tags/${tagId}`);
+}
+
+/** 获取论文文件下载 URL */
+export function getPaperDownloadUrl(paperId: number): string {
+  return (client.defaults.baseURL as string) + `/api/v1/papers/${paperId}/download`;
+}
+
 export function uploadPaperFile(
   paperId: number,
   file: File,

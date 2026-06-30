@@ -1,0 +1,133 @@
+import { useParams, useNavigate } from "react-router-dom";
+import { usePaper } from "../hooks/usePapers";
+import Content from "../layout/Content";
+import PaperInfo from "../components/paper/PaperInfo";
+import AISummaryPanel from "../components/paper/AISummaryPanel";
+import TagManager from "../components/paper/TagManager";
+import Skeleton from "../components/ui/Skeleton";
+import EmptyState from "../components/ui/EmptyState";
+
+function PaperDetailSkeleton() {
+  return (
+    <div role="status" aria-label="加载中">
+      <Skeleton className="mb-6 h-4 w-32" />
+      <div className="flex flex-col gap-6 lg:flex-row">
+        <div className="flex-1 space-y-4">
+          <Skeleton className="h-7 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+          <div className="flex gap-4">
+            <Skeleton className="h-3 w-24" />
+            <Skeleton className="h-3 w-36" />
+          </div>
+          <div>
+            <Skeleton className="mb-2 h-5 w-16" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="mt-1 h-4 w-5/6" />
+          </div>
+        </div>
+        <div className="w-full lg:w-96">
+          <div className="rounded-lg border border-gray-200 p-5">
+            <Skeleton className="mb-4 h-6 w-24" />
+            <Skeleton className="mb-2 h-4 w-full" />
+            <Skeleton className="mb-2 h-4 w-5/6" />
+            <Skeleton className="h-4 w-2/3" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function PaperDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const paperId = Number(id);
+  const navigate = useNavigate();
+
+  // Hooks must be called unconditionally (rules-of-hooks).
+  // usePaper already has enabled: id > 0, so paperId <= 0 disables the query.
+  const { data: paper, isLoading, isError, error, refetch } = usePaper(paperId);
+
+  if (!id || isNaN(paperId) || paperId <= 0) {
+    return (
+      <Content maxWidth="max-w-6xl">
+        <EmptyState title="论文不存在" message="无效的论文 ID" />
+      </Content>
+    );
+  }
+
+  return (
+    <Content maxWidth="max-w-6xl">
+      {/* Back button */}
+      <button
+        onClick={() => navigate("/papers")}
+        className="mb-4 flex items-center gap-1 text-sm text-gray-500 transition-colors hover:text-gray-700"
+      >
+        <svg
+          className="h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        返回论文列表
+      </button>
+
+      {/* Loading state */}
+      {isLoading ? (
+        <PaperDetailSkeleton />
+      ) : isError ? (
+        /* Error state */
+        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
+          <svg
+            className="mx-auto mb-3 h-10 w-10 text-red-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={1.5}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+            />
+          </svg>
+          <p className="text-sm font-medium text-red-600">加载论文失败</p>
+          <p className="mt-1 text-xs text-red-500">
+            {error instanceof Error ? error.message : "请检查网络连接后重试"}
+          </p>
+          <button
+            onClick={() => refetch()}
+            className="mt-3 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
+          >
+            重新加载
+          </button>
+        </div>
+      ) : !paper ? (
+        /* Not found state */
+        <EmptyState title="论文不存在" message="该论文可能已被删除" />
+      ) : (
+        /* Normal state */
+        <>
+          {/* Top row: PaperInfo + AISummaryPanel side by side */}
+          <div className="flex flex-col gap-6 lg:flex-row">
+            <div className="flex-1">
+              <PaperInfo paperId={paperId} />
+            </div>
+            <div className="w-full lg:w-96">
+              <AISummaryPanel paperId={paperId} />
+            </div>
+          </div>
+
+          {/* Bottom: TagManager full width */}
+          <div className="mt-8">
+            <div className="rounded-lg border border-gray-200 bg-white p-5">
+              <TagManager paperId={paperId} tags={paper.tags} />
+            </div>
+          </div>
+        </>
+      )}
+    </Content>
+  );
+}
