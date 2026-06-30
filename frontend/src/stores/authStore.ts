@@ -9,9 +9,12 @@ interface AuthState {
   initialize: () => void;
 }
 
+// 同步初始化：创建 store 时立即从 localStorage 读取 token
+const initialToken = getToken();
+
 export const useAuthStore = create<AuthState>((set) => ({
-  token: null,
-  isAuthenticated: false,
+  token: initialToken,
+  isAuthenticated: !!initialToken,
   setAuth: (token: string) => {
     setToken(token);
     set({ token, isAuthenticated: true });

@@ -36,8 +36,10 @@ export default function MainLayout({
           className={`${hasHeader ? "pt-16" : ""} ${sidebar.className ?? ""}`}
         />
 
-        {/* Content area */}
-        <div className={`flex flex-1 flex-col overflow-hidden ${sidebar.width ?? "w-60"}`}>
+        {/* Content area — sidebar is fixed, offset content with matching margin */}
+        <div
+          className={`flex flex-1 flex-col overflow-hidden ${sidebar.width ? sidebar.width.replace("w-", "ml-") : "ml-60"}`}
+        >
           <Content className={hasHeader ? "pt-16" : ""}>
             <Outlet />
           </Content>

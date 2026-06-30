@@ -1,9 +1,17 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { usePaper } from "../hooks/usePapers";
+import {
+  usePaper,
+  usePaperAISummary,
+  useTriggerAIAnalysis,
+  useAddPaperTag,
+  useRemovePaperTag,
+} from "../hooks/usePapers";
 import Content from "../layout/Content";
 import PaperInfo from "../components/paper/PaperInfo";
 import AISummaryPanel from "../components/paper/AISummaryPanel";
 import TagManager from "../components/paper/TagManager";
+import type { Tab } from "../components/ui/TabBar";
 import Skeleton from "../components/ui/Skeleton";
 import EmptyState from "../components/ui/EmptyState";
 
@@ -46,6 +54,25 @@ export default function PaperDetailPage() {
   // Hooks must be called unconditionally (rules-of-hooks).
   // usePaper already has enabled: id > 0, so paperId <= 0 disables the query.
   const { data: paper, isLoading, isError, error, refetch } = usePaper(paperId);
+  const addTagMutation = useAddPaperTag(paperId);
+  const removeTagMutation = useRemovePaperTag(paperId);
+
+  // ─── AI Summary ───
+  const AI_TABS: Tab[] = [
+    { key: "summary", label: "摘要" },
+    { key: "method", label: "Method" },
+    { key: "result", label: "Result" },
+    { key: "conclusion", label: "Conclusion" },
+  ];
+  const [activeTab, setActiveTab] = useState("summary");
+  const {
+    data: analysis,
+    isLoading: aiLoading,
+    isError: aiError,
+    error: aiErrorObj,
+    refetch: aiRefetch,
+  } = usePaperAISummary(paperId, activeTab);
+  const triggerMutation = useTriggerAIAnalysis(paperId, activeTab);
 
   if (!id || isNaN(paperId) || paperId <= 0) {
     return (
@@ -116,14 +143,33 @@ export default function PaperDetailPage() {
               <PaperInfo paperId={paperId} />
             </div>
             <div className="w-full lg:w-96">
-              <AISummaryPanel paperId={paperId} />
+              <AISummaryPanel
+                analysis={analysis}
+                isLoading={aiLoading}
+                isError={aiError}
+                errorMessage={aiErrorObj instanceof Error ? aiErrorObj.message : undefined}
+                onRetry={() => aiRefetch()}
+                onTriggerAnalysis={() => triggerMutation.mutate()}
+                triggerPending={triggerMutation.isPending}
+                activeTab={activeTab}
+                tabs={AI_TABS}
+                onTabChange={setActiveTab}
+              />
             </div>
           </div>
 
           {/* Bottom: TagManager full width */}
           <div className="mt-8">
             <div className="rounded-lg border border-gray-200 bg-white p-5">
-              <TagManager paperId={paperId} tags={paper.tags} />
+              <TagManager
+                tags={paper.tags}
+                onAdd={(name) => addTagMutation.mutate(name)}
+                onRemove={(tagId) => removeTagMutation.mutate(tagId)}
+                addPending={addTagMutation.isPending}
+                removePendingTagId={
+                  removeTagMutation.isPending ? removeTagMutation.variables : null
+                }
+              />
             </div>
           </div>
         </>

@@ -1,10 +1,25 @@
 import { type ReactNode, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatDate } from "../../utils/format";
-import type { Paper } from "../../types/paper";
 
-export interface PaperCardProps {
-  paper: Paper;
+// ─── 自包含的数据接口 ───
+
+/** PaperCard 需要的最小数据形状，复用时不依赖外部类型 */
+export interface PaperCardData {
+  id: number;
+  title: string;
+  authors?: string | null;
+  abstract?: string | null;
+  publication_date?: string | null;
+  doi?: string | null;
+  original_filename?: string | null;
+  tags: { id: number; name: string }[];
+}
+
+// ─── Props ───
+
+export interface PaperCardProps<T extends PaperCardData = PaperCardData> {
+  paper: T;
 
   /** 右上角操作区插槽（收藏按钮、操作菜单等） */
   topRight?: ReactNode;
@@ -13,10 +28,17 @@ export interface PaperCardProps {
   footer?: ReactNode;
 
   /** 自定义点击行为，默认跳转详情页 */
-  onClick?: (paper: Paper) => void;
+  onClick?: (paper: T) => void;
 }
 
-export default function PaperCard({ paper, topRight, footer, onClick }: PaperCardProps) {
+// ─── 组件 ───
+
+export default function PaperCard<T extends PaperCardData = PaperCardData>({
+  paper,
+  topRight,
+  footer,
+  onClick,
+}: PaperCardProps<T>) {
   const navigate = useNavigate();
 
   const handleClick = useCallback(() => {
@@ -70,7 +92,7 @@ export default function PaperCard({ paper, topRight, footer, onClick }: PaperCar
             )}
           </div>
 
-          {paper.tags && paper.tags.length > 0 && (
+          {paper.tags.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1">
               {paper.tags.map((tag) => (
                 <span

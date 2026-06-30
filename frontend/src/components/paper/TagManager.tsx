@@ -1,23 +1,32 @@
 import { useState } from "react";
 import type { Tag } from "../../types/tag";
-import { useAddPaperTag, useRemovePaperTag } from "../../hooks/usePapers";
 
 interface TagManagerProps {
-  paperId: number;
   tags: Tag[];
+  /** 添加标签回调 */
+  onAdd: (name: string) => void;
+  /** 移除标签回调 */
+  onRemove: (tagId: number) => void;
+  /** 添加操作是否进行中（控制输入框禁用/loading） */
+  addPending?: boolean;
+  /** 当前正在移除的标签 ID（控制单标签 loading） */
+  removePendingTagId?: number | null;
 }
 
-export default function TagManager({ paperId, tags }: TagManagerProps) {
+export default function TagManager({
+  tags,
+  onAdd,
+  onRemove,
+  addPending = false,
+  removePendingTagId = null,
+}: TagManagerProps) {
   const [inputValue, setInputValue] = useState("");
-  const addTagMutation = useAddPaperTag(paperId);
-  const removeTagMutation = useRemovePaperTag(paperId);
 
   const handleAdd = () => {
     const name = inputValue.trim();
     if (!name) return;
-    addTagMutation.mutate(name, {
-      onSuccess: () => setInputValue(""),
-    });
+    onAdd(name);
+    setInputValue("");
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -26,12 +35,6 @@ export default function TagManager({ paperId, tags }: TagManagerProps) {
       handleAdd();
     }
   };
-
-  const handleRemove = (tagId: number) => {
-    removeTagMutation.mutate(tagId);
-  };
-
-  const isAdding = addTagMutation.isPending;
 
   return (
     <section>
@@ -42,8 +45,7 @@ export default function TagManager({ paperId, tags }: TagManagerProps) {
           <span className="text-sm text-gray-400">暂无标签</span>
         ) : (
           tags.map((tag) => {
-            const isRemoving =
-              removeTagMutation.isPending && removeTagMutation.variables === tag.id;
+            const isRemoving = removePendingTagId === tag.id;
             return (
               <span
                 key={tag.id}
@@ -53,7 +55,7 @@ export default function TagManager({ paperId, tags }: TagManagerProps) {
               >
                 {tag.name}
                 <button
-                  onClick={() => handleRemove(tag.id)}
+                  onClick={() => onRemove(tag.id)}
                   disabled={isRemoving}
                   className="inline-flex items-center justify-center text-blue-400 transition-colors hover:text-blue-700 disabled:cursor-not-allowed"
                   aria-label={`移除标签 ${tag.name}`}
@@ -84,10 +86,10 @@ export default function TagManager({ paperId, tags }: TagManagerProps) {
             onChange={(e) => setInputValue(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="添加标签..."
-            disabled={isAdding}
+            disabled={addPending}
             className="w-28 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-900 placeholder-gray-400 transition-colors focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
           />
-          {isAdding && (
+          {addPending && (
             <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
           )}
         </div>

@@ -1,51 +1,64 @@
-import { useState } from "react";
-import { usePaperAISummary, useTriggerAIAnalysis } from "../../hooks/usePapers";
 import Skeleton from "../ui/Skeleton";
-import TabBar from "../ui/TabBar";
+import TabBar, { type Tab } from "../ui/TabBar";
+import type { AIAnalysisStatus } from "../../types/ai";
 
-// ─── Tab 定义 ───
+// ─── Props ───
 
-type AnalysisTab = "summary" | "method" | "result" | "conclusion";
+export interface AISummaryPanelProps {
+  /** 当前分析结果（null = 未触发过，undefined = 尚未加载） */
+  analysis: AIAnalysisStatus | null | undefined;
+  /** 是否正在加载 */
+  isLoading: boolean;
+  /** 是否加载出错 */
+  isError: boolean;
+  /** 错误信息 */
+  errorMessage?: string;
+  /** 重新加载/重试 */
+  onRetry: () => void;
+  /** 触发 AI 分析 */
+  onTriggerAnalysis: () => void;
+  /** 触发操作是否进行中 */
+  triggerPending: boolean;
+  /** 当前激活的 Tab */
+  activeTab: string;
+  /** Tab 定义 */
+  tabs: Tab[];
+  /** Tab 切换回调 */
+  onTabChange: (tab: string) => void;
+}
 
-const TABS: { key: AnalysisTab; label: string }[] = [
-  { key: "summary", label: "摘要" },
-  { key: "method", label: "Method" },
-  { key: "result", label: "Result" },
-  { key: "conclusion", label: "Conclusion" },
-];
+// ─── Tab 常量和 label 映射 ───
 
-const TAB_LABELS: Record<AnalysisTab, string> = {
+const TAB_LABELS: Record<string, string> = {
   summary: "摘要",
   method: "Method",
   result: "Result",
   conclusion: "Conclusion",
 };
 
-// ─── Props ───
-
-interface AISummaryPanelProps {
-  paperId: number;
+function getTabLabel(tab: string): string {
+  return TAB_LABELS[tab] ?? tab;
 }
 
 // ─── 组件 ───
 
-export default function AISummaryPanel({ paperId }: AISummaryPanelProps) {
-  const [activeTab, setActiveTab] = useState<AnalysisTab>("summary");
-
-  const {
-    data: analysis,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = usePaperAISummary(paperId, activeTab);
-  const triggerMutation = useTriggerAIAnalysis(paperId, activeTab);
-
+export default function AISummaryPanel({
+  analysis,
+  isLoading,
+  isError,
+  errorMessage,
+  onRetry,
+  onTriggerAnalysis,
+  triggerPending,
+  activeTab,
+  tabs,
+  onTabChange,
+}: AISummaryPanelProps) {
   // ─── Loading ───
   if (isLoading) {
     return (
       <div className="rounded-lg border border-gray-200 bg-white">
-        <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
+        <TabBar tabs={tabs} active={activeTab} onChange={onTabChange} />
         <div className="p-5" role="status" aria-label="加载中">
           <Skeleton className="mb-4 h-6 w-24" />
           <Skeleton className="mb-2 h-4 w-full" />
@@ -60,14 +73,12 @@ export default function AISummaryPanel({ paperId }: AISummaryPanelProps) {
   if (isError) {
     return (
       <div className="rounded-lg border border-gray-200 bg-white">
-        <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
+        <TabBar tabs={tabs} active={activeTab} onChange={onTabChange} />
         <div className="p-5 text-center">
-          <p className="text-sm font-medium text-red-600">{TAB_LABELS[activeTab]} 分析加载失败</p>
-          <p className="mt-1 text-xs text-red-500">
-            {error instanceof Error ? error.message : "请检查网络连接后重试"}
-          </p>
+          <p className="text-sm font-medium text-red-600">{getTabLabel(activeTab)} 分析加载失败</p>
+          <p className="mt-1 text-xs text-red-500">{errorMessage ?? "请检查网络连接后重试"}</p>
           <button
-            onClick={() => refetch()}
+            onClick={onRetry}
             className="mt-3 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
           >
             重新加载
@@ -81,7 +92,7 @@ export default function AISummaryPanel({ paperId }: AISummaryPanelProps) {
   if (analysis === null) {
     return (
       <div className="rounded-lg border border-gray-200 bg-white">
-        <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
+        <TabBar tabs={tabs} active={activeTab} onChange={onTabChange} />
         <div className="flex flex-col items-center p-5 py-8">
           <svg
             className="mb-3 h-12 w-12 text-gray-300"
@@ -96,19 +107,19 @@ export default function AISummaryPanel({ paperId }: AISummaryPanelProps) {
               d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 014.5 0m0 0v5.714c0 .597.237 1.17.659 1.591L19.8 15.3M14.25 3.104c.251.023.501.05.75.082M19.8 15.3l-1.57.393A9.065 9.065 0 0112 15a9.065 9.065 0 00-6.23.693L5 14.5m14.8.8l1.402 1.402c1.232 1.232.65 3.318-1.067 3.611A48.309 48.309 0 0112 21c-2.773 0-5.491-.235-8.135-.687-1.718-.293-2.3-2.379-1.067-3.61L5 14.5"
             />
           </svg>
-          <p className="text-sm text-gray-500">尚未进行 {TAB_LABELS[activeTab]} 分析</p>
+          <p className="text-sm text-gray-500">尚未进行 {getTabLabel(activeTab)} 分析</p>
           <button
-            onClick={() => triggerMutation.mutate()}
-            disabled={triggerMutation.isPending}
+            onClick={onTriggerAnalysis}
+            disabled={triggerPending}
             className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {triggerMutation.isPending ? (
+            {triggerPending ? (
               <>
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                 请求中...
               </>
             ) : (
-              `AI ${TAB_LABELS[activeTab]}`
+              `AI ${getTabLabel(activeTab)}`
             )}
           </button>
         </div>
@@ -120,14 +131,14 @@ export default function AISummaryPanel({ paperId }: AISummaryPanelProps) {
   if (analysis.status === "pending" || analysis.status === "processing") {
     return (
       <div className="rounded-lg border border-gray-200 bg-white">
-        <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
+        <TabBar tabs={tabs} active={activeTab} onChange={onTabChange} />
         <div className="flex flex-col items-center p-5 py-8">
           <div
             className="mb-4 h-10 w-10 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600"
             role="status"
             aria-label="AI 分析中"
           />
-          <p className="text-sm font-medium text-blue-600">{TAB_LABELS[activeTab]} 分析中...</p>
+          <p className="text-sm font-medium text-blue-600">{getTabLabel(activeTab)} 分析中...</p>
           <p className="mt-1 text-xs text-gray-400">
             {analysis.status === "processing" ? "正在处理" : "等待中"}
           </p>
@@ -140,10 +151,10 @@ export default function AISummaryPanel({ paperId }: AISummaryPanelProps) {
   if (analysis.status === "failed") {
     return (
       <div className="rounded-lg border border-red-200 bg-white">
-        <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
+        <TabBar tabs={tabs} active={activeTab} onChange={onTabChange} />
         <div className="p-5">
           <div className="mb-4 flex items-center gap-2">
-            <h2 className="text-base font-semibold text-gray-900">{TAB_LABELS[activeTab]}</h2>
+            <h2 className="text-base font-semibold text-gray-900">{getTabLabel(activeTab)}</h2>
             <span className="rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-medium text-red-600">
               分析失败
             </span>
@@ -152,11 +163,11 @@ export default function AISummaryPanel({ paperId }: AISummaryPanelProps) {
             <p className="text-sm text-red-600">{analysis.error_message}</p>
           )}
           <button
-            onClick={() => triggerMutation.mutate()}
-            disabled={triggerMutation.isPending}
+            onClick={onTriggerAnalysis}
+            disabled={triggerPending}
             className="mt-4 inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {triggerMutation.isPending ? (
+            {triggerPending ? (
               <>
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                 请求中...
@@ -175,10 +186,10 @@ export default function AISummaryPanel({ paperId }: AISummaryPanelProps) {
 
   return (
     <div className="rounded-lg border border-gray-200 bg-white">
-      <TabBar tabs={TABS} active={activeTab} onChange={setActiveTab} />
+      <TabBar tabs={tabs} active={activeTab} onChange={onTabChange} />
       <div className="p-5">
         <div className="mb-4 flex items-center gap-2">
-          <h2 className="text-base font-semibold text-gray-900">{TAB_LABELS[activeTab]}</h2>
+          <h2 className="text-base font-semibold text-gray-900">{getTabLabel(activeTab)}</h2>
           <span className="rounded-full bg-green-50 px-2.5 py-0.5 text-xs font-medium text-green-600">
             v{analysis.version}
           </span>
