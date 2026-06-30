@@ -1,3 +1,4 @@
+import type { AxiosProgressEvent } from "axios";
 import client from "./client";
 import type { Paper, PaperListParams, PaperListResponse } from "../types/paper";
 
@@ -42,4 +43,23 @@ export function updatePaper(
 
 export function deletePaper(id: number): Promise<void> {
   return client.delete(`/api/v1/papers/${id}`).then((res) => res.data);
+}
+
+export function uploadPaperFile(
+  paperId: number,
+  file: File,
+  onProgress?: (percent: number) => void,
+): Promise<Paper> {
+  const formData = new FormData();
+  formData.append("file", file);
+  return client
+    .post(`/api/v1/papers/${paperId}/upload`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+      onUploadProgress: (event: AxiosProgressEvent) => {
+        if (event.total && onProgress) {
+          onProgress(Math.round((event.loaded * 100) / event.total));
+        }
+      },
+    })
+    .then((res) => res.data);
 }
