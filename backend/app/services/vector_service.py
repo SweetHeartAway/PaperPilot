@@ -19,7 +19,7 @@ from typing import Any
 from app.core.config import settings
 from app.repositories import ChromaVectorRepository
 from app.repositories.vector import SearchResult, VectorRepository
-from app.utils.embedding_client import embedding_client
+from app.services.embedding_service import get_embedding_service
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +35,7 @@ def _create_repository() -> VectorRepository:
         return ChromaVectorRepository(
             persist_dir=settings.CHROMA_PERSIST_DIR,
             collection_name=settings.VECTOR_COLLECTION_NAME,
-            embedding_client=embedding_client,
+            embedding_service=get_embedding_service(),
         )
 
     if provider == "milvus":

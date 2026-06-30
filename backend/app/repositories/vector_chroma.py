@@ -7,22 +7,25 @@
 """
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from app.repositories.vector import IndexItem, SearchResult, VectorRepository
+
+if TYPE_CHECKING:
+    from app.services.embedding_service import EmbeddingService
 
 logger = logging.getLogger(__name__)
 
 
 class _ChromaEmbeddingFunction:
-    """将 application 的 EmbeddingClient 适配为 Chroma EmbeddingFunction
+    """将 EmbeddingService 适配为 Chroma EmbeddingFunction
 
     Chroma 1.5+ 的 EmbeddingFunction Protocol 要求实现:
         __call__(), embed_query(), name(), get_config(), build_from_config()
     """
 
-    def __init__(self, embedding_client: Any) -> None:
-        self._embed = embedding_client.embed
+    def __init__(self, embedding_service: "EmbeddingService") -> None:
+        self._embed = embedding_service.embed
 
     def __call__(self, input: list[str]) -> list[list[float]]:
         return self._embed(input)
@@ -33,34 +36,36 @@ class _ChromaEmbeddingFunction:
 
     @staticmethod
     def name() -> str:
-        return "paperpilot_embedding_client"
+        return "paperpilot_embedding_service"
 
     def get_config(self) -> dict[str, Any]:
-        return {"provider": "paperpilot_embedding_client"}
+        return {"service": "paperpilot_embedding_service"}
 
     @staticmethod
     def build_from_config(config: dict[str, Any]) -> "_ChromaEmbeddingFunction":
-        from app.utils.embedding_client import embedding_client
+        from app.services.embedding_service import get_embedding_service
 
-        return _ChromaEmbeddingFunction(embedding_client)
+        return _ChromaEmbeddingFunction(get_embedding_service())
 
 
 class ChromaVectorRepository(VectorRepository):
     """Chroma 向量数据库实现
 
     数据持久化到本地文件系统，无需外部服务。
+    通过 EmbeddingService（而非直接依赖 EmbeddingClient）获取向量，
+    未来替换 Embedding 实现时本仓库代码无需改动。
 
     Args:
         persist_dir: Chroma 数据目录
         collection_name: 集合名称
-        embedding_client: EmbeddingClient 实例（为 None 时使用 Chroma 内置默认模型）
+        embedding_service: EmbeddingService 实例（为 None 时使用 Chroma 内置默认模型）
     """
 
     def __init__(
         self,
         persist_dir: str = "./chroma_db",
         collection_name: str = "papers",
-        embedding_client: Any = None,
+        embedding_service: "EmbeddingService | None" = None,
     ) -> None:
         self._persist_dir = persist_dir
         self._collection_name = collection_name
@@ -70,8 +75,8 @@ class ChromaVectorRepository(VectorRepository):
         self._chroma_client = chromadb.PersistentClient(path=persist_dir)
 
         ef = None
-        if embedding_client is not None:
-            ef = _ChromaEmbeddingFunction(embedding_client)
+        if embedding_service is not None:
+            ef = _ChromaEmbeddingFunction(embedding_service)
 
         self._collection = self._chroma_client.get_or_create_collection(
             name=collection_name,
