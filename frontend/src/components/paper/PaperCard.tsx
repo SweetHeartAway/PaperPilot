@@ -1,35 +1,63 @@
+import { type ReactNode, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatDate } from "../../utils/format";
 import type { Paper } from "../../types/paper";
 
 export interface PaperCardProps {
   paper: Paper;
+
+  /** 右上角操作区插槽（收藏按钮、操作菜单等） */
+  topRight?: ReactNode;
+
+  /** 底部扩展区插槽（AI 摘要预览、标签管理、批量操作等） */
+  footer?: ReactNode;
+
+  /** 自定义点击行为，默认跳转详情页 */
+  onClick?: (paper: Paper) => void;
 }
 
-export default function PaperCard({ paper }: PaperCardProps) {
+export default function PaperCard({ paper, topRight, footer, onClick }: PaperCardProps) {
   const navigate = useNavigate();
+
+  const handleClick = useCallback(() => {
+    if (onClick) {
+      onClick(paper);
+    } else {
+      navigate(`/papers/${paper.id}`);
+    }
+  }, [paper, onClick, navigate]);
+
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        handleClick();
+      }
+    },
+    [handleClick],
+  );
 
   return (
     <div
-      onClick={() => navigate(`/papers/${paper.id}`)}
+      onClick={handleClick}
       className="cursor-pointer rounded-lg border border-gray-200 bg-white p-5 transition-shadow hover:shadow-md"
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          navigate(`/papers/${paper.id}`);
-        }
-      }}
+      onKeyDown={handleKeyDown}
     >
       <div className="flex items-start justify-between gap-4">
+        {/* ─── 主体：标题、作者、摘要、元信息、标签 ─── */}
         <div className="min-w-0 flex-1">
           <h3 className="text-base font-semibold text-gray-900">{paper.title}</h3>
+
           {paper.authors && <p className="mt-1 truncate text-sm text-gray-500">{paper.authors}</p>}
+
           {paper.abstract && (
             <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-gray-600">
               {paper.abstract}
             </p>
           )}
+
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400">
             {paper.publication_date && <span>{formatDate(paper.publication_date)}</span>}
             {paper.doi && (
@@ -37,8 +65,11 @@ export default function PaperCard({ paper }: PaperCardProps) {
                 DOI: {paper.doi}
               </span>
             )}
-            {paper.original_filename && <span className="truncate">{paper.original_filename}</span>}
+            {paper.original_filename && (
+              <span className="max-w-[200px] truncate">{paper.original_filename}</span>
+            )}
           </div>
+
           {paper.tags && paper.tags.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-1">
               {paper.tags.map((tag) => (
@@ -52,7 +83,13 @@ export default function PaperCard({ paper }: PaperCardProps) {
             </div>
           )}
         </div>
+
+        {/* ─── 右上角插槽 ─── */}
+        {topRight && <div className="flex-shrink-0">{topRight}</div>}
       </div>
+
+      {/* ─── 底部扩展插槽 ─── */}
+      {footer && <div className="mt-3 border-t border-gray-100 pt-3">{footer}</div>}
     </div>
   );
 }
