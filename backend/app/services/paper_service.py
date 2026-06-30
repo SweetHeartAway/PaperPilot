@@ -36,9 +36,30 @@ def create_paper(db: Session, paper: PaperCreate, user_id: int):
     return db_paper
 
 
-def get_papers(db: Session, user_id: int, skip: int = 0, limit: int = 100):
-    """获取用户论文列表"""
-    return db.query(Paper).filter(Paper.user_id == user_id).offset(skip).limit(limit).all()
+def get_papers(
+    db: Session,
+    user_id: int,
+    skip: int = 0,
+    limit: int = 100,
+    search: str | None = None,
+):
+    """获取用户论文列表（支持搜索和分页）"""
+    query = db.query(Paper).filter(Paper.user_id == user_id)
+
+    if search:
+        like = f"%{search}%"
+        query = query.filter(
+            db.or_(
+                Paper.title.ilike(like),
+                Paper.authors.ilike(like),
+                Paper.abstract.ilike(like),
+                Paper.doi.ilike(like),
+            )
+        )
+
+    total = query.count()
+    papers = query.order_by(Paper.updated_at.desc()).offset(skip).limit(limit).all()
+    return papers, total
 
 
 def get_paper(db: Session, paper_id: int, user_id: int | None = None):

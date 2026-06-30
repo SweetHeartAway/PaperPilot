@@ -1,7 +1,15 @@
 import client from "./client";
-import type { Paper, PaperListParams } from "../types/paper";
+import type { Paper, PaperListParams, PaperListResponse } from "../types/paper";
 
 export function fetchPapers(params?: PaperListParams): Promise<Paper[]> {
+  return client.get("/api/v1/papers/", { params }).then((res) => res.data.items);
+}
+
+export function fetchPaperList(params: {
+  skip: number;
+  limit: number;
+  search?: string;
+}): Promise<PaperListResponse> {
   return client.get("/api/v1/papers/", { params }).then((res) => res.data);
 }
 

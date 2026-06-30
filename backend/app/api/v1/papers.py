@@ -15,7 +15,7 @@ from app.schemas.ai import (
     BatchAnalysisResponse,
     VersionDiffResponse,
 )
-from app.schemas.paper import Paper, PaperCreate, PaperUpdate
+from app.schemas.paper import Paper, PaperCreate, PaperListResponse, PaperUpdate
 from app.schemas.tag import TagName
 from app.services import tag_service
 from app.services.ai_summary_service import (
@@ -52,16 +52,17 @@ def create_new_paper(
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
-@router.get("/", response_model=list[Paper])
+@router.get("/", response_model=PaperListResponse)
 def read_papers(
     skip: int = 0,
     limit: int = 100,
+    search: str | None = Query(None, description="搜索关键词（标题/作者/摘要/DOI）"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """获取论文列表"""
-    papers = get_papers(db, user_id=current_user.id, skip=skip, limit=limit)
-    return papers
+    """获取论文列表（支持搜索和分页）"""
+    papers, total = get_papers(db, user_id=current_user.id, skip=skip, limit=limit, search=search)
+    return PaperListResponse(items=papers, total=total)
 
 
 @router.get("/{paper_id}", response_model=Paper)

@@ -1,11 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchPapers, fetchPaper } from "../api/papers";
-import type { Paper, PaperListParams } from "../types/paper";
+import { getPaperList, type PaperListQuery } from "../services/paperService";
+import { fetchPaper } from "../api/papers";
+import type { Paper } from "../types/paper";
 
-export function usePapers(params?: PaperListParams) {
-  return useQuery<Paper[]>({
-    queryKey: ["papers", params],
-    queryFn: () => fetchPapers(params),
+export function usePaperList(query: PaperListQuery) {
+  return useQuery({
+    queryKey: ["papers", "list", query.page, query.pageSize, query.search ?? ""],
+    queryFn: () => getPaperList(query),
+    placeholderData: (previousData) => previousData,
   });
 }
 

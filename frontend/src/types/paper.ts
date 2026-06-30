@@ -21,3 +21,8 @@ export interface PaperListParams {
   limit?: number;
   search?: string;
 }
+
+export interface PaperListResponse {
+  items: Paper[];
+  total: number;
+}

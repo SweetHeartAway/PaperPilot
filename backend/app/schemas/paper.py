@@ -45,3 +45,10 @@ class PaperSearch(BaseModel):
     query: str = Field(..., min_length=1)
     skip: int = 0
     limit: int = 100
+
+
+class PaperListResponse(BaseModel):
+    """分页论文列表响应"""
+
+    items: list[Paper]
+    total: int

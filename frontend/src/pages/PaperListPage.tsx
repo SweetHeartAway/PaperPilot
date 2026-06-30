@@ -1,99 +1,41 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { usePapers } from "../hooks/usePapers";
-import Loading from "../components/ui/Loading";
+import { usePaperList } from "../hooks/usePapers";
+import Content from "../layout/Content";
+import PaperList from "../components/paper/PaperList";
+import PaperCardSkeleton from "../components/paper/PaperCardSkeleton";
 import EmptyState from "../components/ui/EmptyState";
 import Pagination from "../components/ui/Pagination";
-import { formatDate } from "../utils/format";
-import type { Paper } from "../types/paper";
 
 const PAGE_SIZE = 20;
 
-function PaperCard({ paper }: { paper: Paper }) {
-  const navigate = useNavigate();
-
-  return (
-    <div
-      onClick={() => navigate(`/papers/${paper.id}`)}
-      className="cursor-pointer rounded-lg border border-gray-200 bg-white p-5 transition-shadow hover:shadow-md"
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          navigate(`/papers/${paper.id}`);
-        }
-      }}
-    >
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
-          <h3 className="text-base font-semibold text-gray-900">{paper.title}</h3>
-          {paper.authors && <p className="mt-1 truncate text-sm text-gray-500">{paper.authors}</p>}
-          {paper.abstract && (
-            <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-gray-600">
-              {paper.abstract}
-            </p>
-          )}
-          <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-400">
-            {paper.publication_date && <span>{formatDate(paper.publication_date)}</span>}
-            {paper.doi && (
-              <span className="max-w-[180px] truncate" title={paper.doi}>
-                DOI: {paper.doi}
-              </span>
-            )}
-            {paper.original_filename && <span className="truncate">{paper.original_filename}</span>}
-          </div>
-          {paper.tags && paper.tags.length > 0 && (
-            <div className="mt-2 flex flex-wrap gap-1">
-              {paper.tags.map((tag) => (
-                <span
-                  key={tag.id}
-                  className="inline-block rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-600"
-                >
-                  {tag.name}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function PaperListPage() {
   const navigate = useNavigate();
-  const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
-  const { data: papers, isLoading, isError, error, refetch } = usePapers();
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [page, setPage] = useState(1);
 
-  // Local search filter
-  const filteredPapers = useMemo(() => {
-    if (!papers) return [];
-    if (!searchQuery.trim()) return papers;
-    const query = searchQuery.toLowerCase();
-    return papers.filter(
-      (p) =>
-        p.title.toLowerCase().includes(query) ||
-        (p.authors && p.authors.toLowerCase().includes(query)) ||
-        (p.abstract && p.abstract.toLowerCase().includes(query)) ||
-        (p.doi && p.doi.toLowerCase().includes(query)),
-    );
-  }, [papers, searchQuery]);
-
-  // Pagination
-  const totalPages = Math.max(1, Math.ceil(filteredPapers.length / PAGE_SIZE));
-  const paginatedPapers = filteredPapers.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
-  );
-
-  // Reset to page 1 when search query changes
+  // Debounce search input
   useEffect(() => {
-    setCurrentPage(1);
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 300);
+    return () => clearTimeout(timer);
   }, [searchQuery]);
 
+  // Reset to page 1 when search changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  const { data, isLoading, isError, error, refetch } = usePaperList({
+    page,
+    pageSize: PAGE_SIZE,
+    search: debouncedSearch || undefined,
+  });
+
   return (
-    <div className="mx-auto max-w-5xl">
+    <Content maxWidth="max-w-5xl">
       {/* Search and Upload Bar */}
       <div className="mb-6 flex items-center gap-4">
         <div className="relative flex-1">
@@ -140,8 +82,8 @@ export default function PaperListPage() {
       </div>
 
       {/* Content */}
-      {isLoading ? (
-        <Loading message="正在加载论文列表..." />
+      {isLoading && !data ? (
+        <PaperCardSkeleton count={6} />
       ) : isError ? (
         <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
           <svg
@@ -168,35 +110,31 @@ export default function PaperListPage() {
             重新加载
           </button>
         </div>
-      ) : paginatedPapers.length === 0 && filteredPapers.length === 0 && !searchQuery ? (
-        <EmptyState
-          title="还没有论文"
-          message={'点击上方"上传论文"按钮添加你的第一篇论文'}
-          action={
-            <button
-              onClick={() => navigate("/papers/create")}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
-            >
-              上传第一篇论文
-            </button>
-          }
-        />
-      ) : paginatedPapers.length === 0 && searchQuery ? (
-        <EmptyState title="未找到匹配的论文" message="尝试使用不同的关键词搜索" />
-      ) : (
-        <>
-          <div className="space-y-3">
-            {paginatedPapers.map((paper) => (
-              <PaperCard key={paper.id} paper={paper} />
-            ))}
-          </div>
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
+      ) : data && data.papers.length === 0 ? (
+        debouncedSearch ? (
+          <EmptyState title="未找到匹配的论文" message="尝试使用不同的关键词搜索" />
+        ) : (
+          <EmptyState
+            title="还没有论文"
+            message={'点击上方"上传论文"按钮添加你的第一篇论文'}
+            action={
+              <button
+                onClick={() => navigate("/papers/create")}
+                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+              >
+                上传第一篇论文
+              </button>
+            }
           />
-        </>
+        )
+      ) : (
+        data && (
+          <>
+            <PaperList papers={data.papers} />
+            <Pagination currentPage={page} totalPages={data.totalPages} onPageChange={setPage} />
+          </>
+        )
       )}
-    </div>
+    </Content>
   );
 }
