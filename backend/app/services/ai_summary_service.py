@@ -8,69 +8,31 @@ from datetime import UTC, datetime
 from typing import Any
 
 from app.core.config import settings
+from app.core.prompts import KEYWORD_SYSTEM_PROMPT, SUMMARY_SYSTEM_PROMPT
 from app.models.ai import AIAnalysis
 from app.services import prompt_service
-from app.services.ai_service import extract_keywords, generate_summary
+from app.services.ai_utils import (
+    build_result_dict,
+    extract_text_from_paper,
+    format_user_prompt,
+)
 from app.services.paper_service import get_paper
-from app.utils.pdf_extractor import extract_text_from_pdf
+from app.utils.ai_client import ai_client
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 
 
-# ─── 文本提取 ────────────────────────────────────────────────
-
-
-def _extract_text_from_paper(paper: Any) -> str:
-    """从论文对象提取可分析文本
-
-    优先级：
-    1. 使用 paper.abstract（用户填写的摘要）
-    2. 回退到 PDF 文件全文提取（需要已上传文件）
-    """
-    if paper.abstract and paper.abstract.strip():
-        return paper.abstract.strip()
-
-    if paper.file_path:
-        try:
-            text = extract_text_from_pdf(paper.file_path)
-            logger.info("从 PDF 提取文本成功: paper_id=%s, chars=%d", paper.id, len(text))
-            return text
-        except (FileNotFoundError, ValueError) as e:
-            logger.warning("PDF 文本提取失败: paper_id=%s, error=%s", paper.id, e)
-            raise ValueError(f"无法提取 PDF 文本: {e}")
-
-    raise ValueError("论文没有可分析的内容（摘要为空且未上传 PDF 文件）")
-
-
-def _format_user_prompt(template: str | None, paper: Any, content: str) -> str:
-    """格式化用户提示词
-
-    将 {title} {abstract} {content} {authors} 替换为实际值。
-    template 为空时默认仅返回 content。
-    """
-    if not template:
-        return content
-
-    return template.format(
-        title=paper.title or "",
-        abstract=paper.abstract or "",
-        content=content,
-        authors=paper.authors or "",
+def _ai_extract_keywords(content: str) -> list[str]:
+    """使用 AI 提取关键词"""
+    result = ai_client.chat(
+        system_prompt=KEYWORD_SYSTEM_PROMPT,
+        user_prompt=f"以下是论文内容：\n\n{content}",
+        temperature=0.1,
     )
-
-
-def _build_result_dict(summary: str, keywords: list[str]) -> str:
-    """构建结构化 JSON 结果"""
-    return json.dumps(
-        {
-            "summary": summary,
-            "keywords": keywords,
-            "main_points": [],
-        },
-        ensure_ascii=False,
-    )
+    keywords = [k.strip() for k in result.split(",") if k.strip()]
+    return keywords[:10]
 
 
 # ─── 单篇查询 ────────────────────────────────────────────────
@@ -316,26 +278,29 @@ def trigger_ai_summary(
 
     # 6. 提取文本 + AI 分析
     try:
-        text = _extract_text_from_paper(paper)
+        text = extract_text_from_paper(paper)
         start_time = time.time()
 
         if prompt_template:
             # 使用自定义 Prompt
-            user_prompt = _format_user_prompt(prompt_template.user_prompt_template, paper, text)
-            from app.utils.ai_client import ai_client
+            user_prompt = format_user_prompt(prompt_template.user_prompt_template, paper, text)
 
             summary = ai_client.chat(
                 system_prompt=prompt_template.system_prompt,
                 user_prompt=user_prompt,
             )
-            # 关键词：如果自定义模板的 type 是 summary，keyword 仍用默认方式
-            keywords = extract_keywords(text)
+            # 关键词仍使用默认方式
+            keywords = _ai_extract_keywords(text)
         else:
-            # 使用默认 Prompt（原有逻辑）
-            summary = generate_summary(text)
-            keywords = extract_keywords(text)
+            # 使用默认 Prompt（共享常量）
+            summary = ai_client.chat(
+                system_prompt=SUMMARY_SYSTEM_PROMPT,
+                user_prompt=f"以下是论文内容：\n\n{text}",
+                temperature=0.3,
+            ).strip()
+            keywords = _ai_extract_keywords(text)
 
-        result_json = _build_result_dict(summary, keywords)
+        result_json = build_result_dict(summary, keywords)
         elapsed_ms = int((time.time() - start_time) * 1000)
 
         # 7. 更新记录

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getPaperList, type PaperListQuery } from "../services/paperService";
-import { fetchPaper, addPaperTag, removePaperTag } from "../api/papers";
+import { fetchPaper } from "../api/papers";
 import { fetchPaperAISummary, triggerPaperAISummary } from "../api/ai";
 import type { Paper } from "../types/paper";
 import type { AIAnalysisStatus } from "../types/ai";
@@ -45,24 +45,4 @@ export function useTriggerAIAnalysis(paperId: number, analysisType?: string) {
   });
 }
 
-// ─── Tags ───
-
-export function useAddPaperTag(paperId: number) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (name: string) => addPaperTag(paperId, name),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["paper", paperId] });
-    },
-  });
-}
-
-export function useRemovePaperTag(paperId: number) {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (tagId: number) => removePaperTag(paperId, tagId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["paper", paperId] });
-    },
-  });
-}
+// Tags hooks 已移至 useTags.ts

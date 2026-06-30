@@ -5,6 +5,7 @@ import Content from "../layout/Content";
 import PaperList from "../components/paper/PaperList";
 import PaperCardSkeleton from "../components/paper/PaperCardSkeleton";
 import EmptyState from "../components/ui/EmptyState";
+import ErrorState from "../components/ui/ErrorState";
 import Pagination from "../components/ui/Pagination";
 
 const PAGE_SIZE = 20;
@@ -85,31 +86,11 @@ export default function PaperListPage() {
       {isLoading && !data ? (
         <PaperCardSkeleton count={6} />
       ) : isError ? (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-          <svg
-            className="mx-auto mb-3 h-10 w-10 text-red-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1.5}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
-            />
-          </svg>
-          <p className="text-sm font-medium text-red-600">加载论文列表失败</p>
-          <p className="mt-1 text-xs text-red-500">
-            {error instanceof Error ? error.message : "请检查网络连接后重试"}
-          </p>
-          <button
-            onClick={() => refetch()}
-            className="mt-3 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
-          >
-            重新加载
-          </button>
-        </div>
+        <ErrorState
+          title="加载论文列表失败"
+          message={error instanceof Error ? error.message : "请检查网络连接后重试"}
+          onRetry={() => refetch()}
+        />
       ) : data && data.papers.length === 0 ? (
         debouncedSearch ? (
           <EmptyState title="未找到匹配的论文" message="尝试使用不同的关键词搜索" />

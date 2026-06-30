@@ -1,51 +1,27 @@
-"""AI分析服务 — 论文内容分析、摘要生成、关键词提取
+"""AI分析服务 — 论文内容分析、摘要生成、关键词提取（旧版）
 
 通过 ai_client 调用真实 AI 模型，无 API Key 时自动降级为本地桩实现。
+系统提示词已迁移至 app/core/prompts.py 共享。
 """
 
 import json
 import logging
 from typing import Any
 
+from app.core.prompts import KEYWORD_SYSTEM_PROMPT, SUMMARY_SYSTEM_PROMPT
 from app.utils.ai_client import ai_client
 
 logger = logging.getLogger(__name__)
 
 
-_SUMMARY_SYSTEM_PROMPT = (
-    """你是一个专业的学术论文分析助手。"""
-    """请根据提供的论文内容，生成一份简洁、准确的中文摘要。
-
-要求：
-1. 概括论文的核心问题、方法和结论
-2. 保持客观，不添加原文没有的信息
-3. 控制在 300 字以内
-4. 使用中文输出"""
-)
-
-_KEYWORD_SYSTEM_PROMPT = (
-    """你是一个专业的学术论文关键词提取助手。"""
-    """请根据提供的论文内容，提取 3-8 个关键词。
-
-要求：
-1. 关键词应准确反映论文的核心主题和方法
-2. 优先使用原文中的专业术语
-3. 中英文均可，以原文语言为主
-4. 仅返回关键词列表，用逗号分隔"""
-)
-
-
 def generate_summary(content: str) -> str:
     """生成论文摘要
 
-    使用配置的 AI 模型生成摘要。无 API Key 时降级为截取前 200 字符。
+    使用配置的 AI 模型生成摘要。ai_client.chat() 内部自动处理 stub 降级。
     """
-    if ai_client.is_stub:
-        return _stub_summary(content)
-
     try:
         result = ai_client.chat(
-            system_prompt=_SUMMARY_SYSTEM_PROMPT,
+            system_prompt=SUMMARY_SYSTEM_PROMPT,
             user_prompt=f"以下是论文内容：\n\n{content}",
             temperature=0.3,
         )
@@ -65,7 +41,7 @@ def extract_keywords(content: str) -> list[str]:
 
     try:
         result = ai_client.chat(
-            system_prompt=_KEYWORD_SYSTEM_PROMPT,
+            system_prompt=KEYWORD_SYSTEM_PROMPT,
             user_prompt=f"以下是论文内容：\n\n{content}",
             temperature=0.1,
         )

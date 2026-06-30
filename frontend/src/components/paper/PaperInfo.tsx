@@ -1,6 +1,7 @@
 import { usePaper } from "../../hooks/usePapers";
 import { formatDate, formatFileSize } from "../../utils/format";
 import { getPaperDownloadUrl } from "../../api/papers";
+import ErrorState from "../ui/ErrorState";
 import Skeleton from "../ui/Skeleton";
 
 interface PaperInfoProps {
@@ -32,18 +33,11 @@ export default function PaperInfo({ paperId }: PaperInfoProps) {
 
   if (isError) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-        <p className="text-sm font-medium text-red-600">加载论文信息失败</p>
-        <p className="mt-1 text-xs text-red-500">
-          {error instanceof Error ? error.message : "请检查网络连接后重试"}
-        </p>
-        <button
-          onClick={() => refetch()}
-          className="mt-3 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
-        >
-          重新加载
-        </button>
-      </div>
+      <ErrorState
+        title="加载论文信息失败"
+        message={error instanceof Error ? error.message : "请检查网络连接后重试"}
+        onRetry={() => refetch()}
+      />
     );
   }
 

@@ -25,15 +25,13 @@ from app.services.ai_summary_service import (
     trigger_ai_summary,
     trigger_batch_analysis,
 )
+from app.services.file_service import delete_paper_file, download_paper_file, upload_paper_file
 from app.services.paper_service import (
     create_paper,
     delete_paper,
-    delete_paper_file,
-    download_paper_file,
     get_paper,
     get_papers,
     update_paper,
-    upload_paper_file,
 )
 
 router = APIRouter()

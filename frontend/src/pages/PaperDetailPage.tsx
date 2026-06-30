@@ -1,17 +1,13 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import {
-  usePaper,
-  usePaperAISummary,
-  useTriggerAIAnalysis,
-  useAddPaperTag,
-  useRemovePaperTag,
-} from "../hooks/usePapers";
+import { usePaper, usePaperAISummary, useTriggerAIAnalysis } from "../hooks/usePapers";
+import { useAddPaperTag, useRemovePaperTag } from "../hooks/useTags";
 import Content from "../layout/Content";
 import PaperInfo from "../components/paper/PaperInfo";
 import AISummaryPanel from "../components/paper/AISummaryPanel";
 import TagManager from "../components/paper/TagManager";
 import type { Tab } from "../components/ui/TabBar";
+import ErrorState from "../components/ui/ErrorState";
 import Skeleton from "../components/ui/Skeleton";
 import EmptyState from "../components/ui/EmptyState";
 
@@ -105,32 +101,11 @@ export default function PaperDetailPage() {
       {isLoading ? (
         <PaperDetailSkeleton />
       ) : isError ? (
-        /* Error state */
-        <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-          <svg
-            className="mx-auto mb-3 h-10 w-10 text-red-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={1.5}
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
-            />
-          </svg>
-          <p className="text-sm font-medium text-red-600">加载论文失败</p>
-          <p className="mt-1 text-xs text-red-500">
-            {error instanceof Error ? error.message : "请检查网络连接后重试"}
-          </p>
-          <button
-            onClick={() => refetch()}
-            className="mt-3 rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-700"
-          >
-            重新加载
-          </button>
-        </div>
+        <ErrorState
+          title="加载论文失败"
+          message={error instanceof Error ? error.message : "请检查网络连接后重试"}
+          onRetry={() => refetch()}
+        />
       ) : !paper ? (
         /* Not found state */
         <EmptyState title="论文不存在" message="该论文可能已被删除" />
