@@ -4,7 +4,7 @@
 
 - 本项目用于：AI 论文管理平台（PaperPilot），帮助研究人员管理和分析学术论文
 - 主要用户和场景：研究人员、学生、学术用户，需要管理论文库、上传 PDF、自动生成摘要和关键词
-- 当前阶段：后端核心功能基本完成（用户认证、论文 CRUD、标签管理、PDF 上传/下载、AI 分析摘要、自定义 Prompt 模板），前端 Paper List 页面初始化中
+- 当前阶段：后端全部完成（34 个 API 端点、59 个测试通过），前端 4 个核心页面已实现（Paper List、Paper Create、Paper Detail、Login/Register），2 个页面待实现（标签管理、个人中心）
 - 暂时不做：全文搜索、团队协作/多用户共享、Celery 异步任务、移动端适配、第三方登录（OAuth）
 
 ## 工作方式
@@ -33,11 +33,24 @@ paper-manager-project/
 │   ├── tests/                # pytest 测试
 │   └── main.py               # 应用入口
 ├── frontend/                 # React 前端（Vite + TypeScript + Tailwind）
-│   └── src/                  # React 组件/页面/API 调用
+│   └── src/
+│       ├── api/              # HTTP 请求封装（axios），零业务逻辑
+│       ├── components/       # 可复用 UI 组件
+│       │   ├── ui/           # 纯 UI 基件（EmptyState, Pagination, Skeleton, TabBar 等）
+│       │   ├── paper/        # 论文领域组件（PaperCard, TagManager, AISummaryPanel 等）
+│       │   └── auth/         # 认证相关组件（ProtectedRoute）
+│       ├── hooks/            # React Query + 自定义 hooks
+│       ├── layout/           # 纯 props 驱动的布局系统（Header/Sidebar/Content/Footer）
+│       ├── pages/            # 页面编排层（组合 hooks + 组件）
+│       ├── services/         # 业务数据转换层
+│       ├── stores/           # Zustand 客户端状态（auth, toast）
+│       ├── types/            # TypeScript 类型定义
+│       ├── utils/            # 工具函数（format, token）
+│       └── assets/           # 静态资源（logo 等）
 ├── docs/                     # 项目文档
-│   ├── api/                  # API 规范（待补充）
-│   ├── deployment/           # 部署文档（待补充）
-│   └── design/               # 设计文档（待补充）
+│   ├── api/                  # API 规范
+│   ├── deployment/           # 部署文档
+│   └── design/               # 设计文档
 └── .claude/                  # Claude Code 配置
 ```
 - 后端 6 个目录各司其职，新增代码按功能归属到对应目录，不要随意新建顶层包
@@ -69,6 +82,7 @@ npm run dev                          # 启动开发服务器
 npm run build                        # 构建
 npm run lint                         # oxlint 检查
 npm run format                       # prettier 格式化
+npx tsc --noEmit                     # TypeScript 类型检查（无输出=通过）
 ```
 
 ## 代码规范
@@ -116,6 +130,29 @@ npm run format                       # prettier 格式化
 - conftest.py 顶部必须 `from app.models import User, Paper, AIAnalysis` 注册表
 - 测试覆盖正常路径 + 边界（重复、无效、不存在、权限不足）
 
+### TypeScript / React
+- 使用 TypeScript strict 模式，避免 `any`
+- `PascalCase`（组件/类型）、`camelCase`（变量/函数/文件）
+- 组件 props 必须定义接口，使用 `interface` 不是 `type`
+- 纯 UI 基件用 props 驱动，不直接 import hooks 或 store
+- 领域组件通过 props 注入回调，不直接使用 hooks（解耦原则）
+- 使用 `export default function ComponentName` 导出组件
+
+### 前端分层原则（数据流方向）
+```
+api/ (HTTP only) → services/ (transform) → hooks/ (React Query) → pages/ (orchestration)
+```
+- `api/` ：只做 HTTP 请求，不处理业务逻辑
+- `services/` ：做数据转换（如 skip/limit → page/pageSize）
+- `hooks/` ：封装 React Query 的 useQuery/useMutation
+- `pages/` ：编排 hooks + 组件，不写直接 API 调用
+- 组件不直接 import `api/` 或 `services/`，通过 hooks 间接使用
+
+### Frontend State 管理
+- 服务端状态（论文、AI 分析、标签）→ React Query
+- 客户端状态（auth token、toast）→ Zustand store
+- 不要在 Zustand 中缓存 API 返回数据
+
 ### Commit 规范
 ```
 <type>: <简短中文或英文描述>
@@ -143,11 +180,13 @@ npm run format                       # prettier 格式化
 - 测试不能跑时说明原因（基础设施缺失、环境依赖、API Key 等）
 - 标出仍然存在的风险和下一步建议
 - 新 API 端点必须在 `app.openapi()` 的 paths 中可见
+- 前端修改必须 TypeScript 类型检查通过（`npx tsc --noEmit`）
 
 ## 当前功能状态
 
 | 功能 | 状态 |
 |------|------|
+| **后端** | |
 | 用户注册/登录（JWT、bcrypt） | ✅ |
 | 论文 CRUD（含 DOI 唯一性校验） | ✅ |
 | 标签（多对多，自动创建，CRUD） | ✅ |
@@ -157,13 +196,32 @@ npm run format                       # prettier 格式化
 | AI 分析版本对比 | ✅ |
 | 自定义 Prompt 模板（CRUD、默认模板） | ✅ |
 | 多模型切换（DeepSeek/GLM/OpenAI/Ollama） | ✅ |
-| 前端 Paper List 页面 | ⏳ 初始化中 |
-| 全文搜索、团队协作、OAuth、Celery | ❌ 暂时不做 |
+| Embedding + Chroma 向量存储 | ✅ |
+| PDF 文本提取 | ✅ |
+| 后端测试覆盖率（53 个测试） | ✅ |
+| **前端** | |
+| Layout 系统（Header/Sidebar/Content/Footer） | ✅ |
+| 路由守卫（ProtectedRoute） | ✅ |
+| 论文列表页（分页/搜索/Skeleton 加载） | ✅ |
+| 论文上传页（拖拽/进度/重试） | ✅ |
+| 论文详情页（信息/AI 分析/Tag 三区布局） | ✅ |
+| AI 分析 4 Tab（摘要/Method/Result/Conclusion） | ✅ |
+| PaperCard 泛型化（可跨项目复用） | ✅ |
+| TagManager / AISummaryPanel 解耦（props 注入） | ✅ |
+| Toast 通知系统（成功/失败/Loading） | ✅ |
+| 登录/注册页面（表单验证 + 路由守卫联动） | ✅ |
+| 标签管理页面 | ⏳ 待实现 |
+| 个人中心页面 | ⏳ 待实现 |
+| 前端组件测试 | ⏳ 待补充 |
+| **文档** | |
+| API 文档 | ⏳ 待补充 |
+| 部署文档 | ⏳ 待补充 |
+| 设计文档 | ⏳ 待补充 |
 
 ## 需要按需阅读的文档
 
-- API 规范：`docs/api/`（暂为空）
-- 数据库设计：`docs/design/`（暂为空）
-- 部署文档：`docs/deployment/`（暂为空）
+- API 文档：`docs/api/`
+- 数据库设计：`docs/design/`
+- 部署文档：`docs/deployment/`
 - Pre-commit 配置：`.pre-commit-config.yaml`
 - Claude Code hooks 配置：`.claude/settings.local.json`
