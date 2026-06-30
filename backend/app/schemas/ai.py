@@ -32,7 +32,9 @@ class AIAnalysisResponse(BaseModel):
 class AIAnalysisTriggerRequest(BaseModel):
     """触发论文 AI 分析请求"""
 
-    analysis_type: str = Field(default="summary", pattern=r"^(summary|keywords|full_analysis)$")
+    analysis_type: str = Field(
+        default="summary", pattern=r"^(summary|keywords|full_analysis|method|result|conclusion)$"
+    )
     force_regenerate: bool = Field(default=False, description="忽略缓存，强制重新生成")
     custom_prompt_id: int | None = Field(
         default=None, description="自定义提示词模板 ID（空 = 使用默认提示词）"
@@ -120,7 +122,9 @@ class BatchAnalysisRequest(BaseModel):
     paper_ids: list[int] = Field(
         ..., min_length=1, max_length=50, description="论文 ID 列表（最多 50 篇）"
     )
-    analysis_type: str = Field(default="summary", pattern=r"^(summary|keywords|full_analysis)$")
+    analysis_type: str = Field(
+        default="summary", pattern=r"^(summary|keywords|full_analysis|method|result|conclusion)$"
+    )
     force_regenerate: bool = False
     custom_prompt_id: int | None = None
 
@@ -151,7 +155,9 @@ class PromptTemplateCreate(BaseModel):
 
     name: str = Field(..., min_length=1, max_length=100, description="模板名称")
     description: str | None = None
-    analysis_type: str = Field(..., pattern=r"^(summary|keywords|full_analysis)$")
+    analysis_type: str = Field(
+        ..., pattern=r"^(summary|keywords|full_analysis|method|result|conclusion)$"
+    )
     system_prompt: str = Field(..., min_length=1, description="系统提示词")
     user_prompt_template: str | None = Field(
         None,
@@ -167,7 +173,9 @@ class PromptTemplateUpdate(BaseModel):
 
     name: str | None = Field(None, min_length=1, max_length=100)
     description: str | None = None
-    analysis_type: str | None = Field(None, pattern=r"^(summary|keywords|full_analysis)$")
+    analysis_type: str | None = Field(
+        None, pattern=r"^(summary|keywords|full_analysis|method|result|conclusion)$"
+    )
     system_prompt: str | None = Field(None, min_length=1)
     user_prompt_template: str | None = None
     is_default: bool | None = None

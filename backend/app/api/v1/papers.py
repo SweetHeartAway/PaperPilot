@@ -234,6 +234,9 @@ def batch_ai_summary(
 def read_ai_summary(
     paper_id: int,
     version: int | None = Query(None, description="指定版本号，默认返回最新 completed 版本"),
+    analysis_type: str | None = Query(
+        None, description="分析类型（summary/method/result/conclusion）"
+    ),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -241,8 +244,15 @@ def read_ai_summary(
 
     - 不传 version：返回最新 completed 版本
     - 传 version：返回指定版本（不限状态）
+    - 不传 analysis_type：返回 summary 类型结果
     """
-    analysis = get_ai_summary(db, paper_id=paper_id, user_id=current_user.id, version=version)
+    analysis = get_ai_summary(
+        db,
+        paper_id=paper_id,
+        user_id=current_user.id,
+        version=version,
+        analysis_type=analysis_type or "summary",
+    )
     if analysis is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

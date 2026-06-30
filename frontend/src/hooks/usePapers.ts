@@ -23,10 +23,11 @@ export function usePaper(id: number) {
 
 // ─── AI Summary ───
 
-export function usePaperAISummary(paperId: number) {
+export function usePaperAISummary(paperId: number, analysisType?: string) {
   return useQuery<AIAnalysisStatus | null>({
-    queryKey: ["paper", paperId, "ai-summary"],
-    queryFn: () => fetchPaperAISummary(paperId),
+    queryKey: ["paper", paperId, "ai-summary", analysisType ?? "summary"],
+    queryFn: () => fetchPaperAISummary(paperId, analysisType),
+    enabled: paperId > 0,
     refetchInterval: (query) => {
       const data = query.state.data;
       return data && (data.status === "pending" || data.status === "processing") ? 2000 : false;
@@ -34,10 +35,10 @@ export function usePaperAISummary(paperId: number) {
   });
 }
 
-export function useTriggerAIAnalysis(paperId: number) {
+export function useTriggerAIAnalysis(paperId: number, analysisType?: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: () => triggerPaperAISummary(paperId),
+    mutationFn: () => triggerPaperAISummary(paperId, { analysisType }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["paper", paperId, "ai-summary"] });
     },
