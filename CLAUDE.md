@@ -84,10 +84,6 @@ npm run lint                         # oxlint 检查
 npm run format                       # prettier 格式化
 npx tsc --noEmit                     # TypeScript 类型检查（无输出=通过）
 
-# 【待补充】
-npm run test              # Vitest
-npm run test:coverage
-npm run preview
 ```
 
 ## 代码规范
@@ -118,33 +114,16 @@ npm run preview
 - 序列化用 `.model_dump()` 不是 `.dict()`
 - AIAnalysis 的 result 字段在数据库中是 JSON 字符串，schema 需加 `@field_validator("result", mode="before")` 解析
 
-### React Query（待补充）
-- queryKey 集中管理
-- invalidateQueries 不允许字符串硬编码
-- mutation 成功后统一刷新缓存
-- optimistic update 统一写法
-- staleTime/cacheTime 按页面统一配置
-
 ### JWT / 认证
 - Token 通过 `OAuth2PasswordBearer(tokenUrl="...")` 获取
 - `get_current_user` 统一在 `app/core/dependencies.py` 中实现
 - decode 失败 → 401，用户不存在 → 401，用户被禁用 → 403
 - 密码用 bcrypt（passlib），secret_key 从 settings 读取
 
-### AI（待补充）
-
-开发规范：
-
+### AI 客户端
 - 通过 `app/utils/ai_client.py` 统一调用 AI 模型，不直接创建 OpenAI 客户端
 - 模型通过 `.env` 配置切换（AI_API_BASE_URL + AI_MODEL），代码不做 provider 判断
 - 无 API Key 时自动降级为桩实现
-
-【待补充】
-
-- Prompt 全部模板化，禁止写死
-- 保留原始 AI 响应
-- Timeout 统一配置
-- Retry 策略统一
 
 ### 测试
 - 文件命名 `test_<module>.py`，用 `test_client` 和 `db_session` fixture
@@ -152,18 +131,20 @@ npm run preview
 - conftest.py 顶部必须 `from app.models import User, Paper, AIAnalysis` 注册表
 - 测试覆盖正常路径 + 边界（重复、无效、不存在、权限不足）
 
-### TypeScript / React（待补充）
+### TypeScript / React
 - 使用 TypeScript strict 模式，避免 `any`
 - `PascalCase`（组件/类型）、`camelCase`（变量/函数/文件）
 - 组件 props 必须定义接口，使用 `interface` 不是 `type`
 - 纯 UI 基件用 props 驱动，不直接 import hooks 或 store
 - 领域组件通过 props 注入回调，不直接使用 hooks（解耦原则）
 - 使用 `export default function ComponentName` 导出组件
-- 所有 API Response 使用统一类型封装
-- 禁止组件直接解析 Axios Response
-- hooks 返回的数据必须经过 services 转换
-- React Query queryKey 使用统一工厂函数
-- 公共类型统一放入 types/
+
+### React Query
+- queryKey 集中管理
+- invalidateQueries 不允许字符串硬编码
+- mutation 成功后统一刷新缓存
+- optimistic update 统一写法
+- staleTime/cacheTime 按页面统一配置
 
 ### 前端分层原则（数据流方向）
 ```
@@ -175,89 +156,10 @@ api/ (HTTP only) → services/ (transform) → hooks/ (React Query) → pages/ (
 - `pages/` ：编排 hooks + 组件，不写直接 API 调用
 - 组件不直接 import `api/` 或 `services/`，通过 hooks 间接使用
 
-### 前端组件规范（待补充）
-
-组件原则：
-
-- 单一职责
-- 页面组件建议控制在 300 行以内
-- UI 组件不得依赖业务 hooks
-- Modal 统一管理
-- Dialog 统一封装
-
-### Hooks（待补充）
-
-规范：
-
-- 一个 Hook 负责一种业务
-- 不直接调用 Toast
-- 不直接操作 Router
-- 返回 loading / data / error
-- Mutation 仅负责数据更新
-
-### Services（待补充）
-
-负责：
-
-- DTO 转换
-- API 数据转换
-- 分页转换
-- AI 返回数据转换
-
-禁止：
-
-- 使用 React Hook
-- 使用 Store
-
 ### Frontend State 管理
 - 服务端状态（论文、AI 分析、标签）→ React Query
 - 客户端状态（auth token、toast）→ Zustand store
 - 不要在 Zustand 中缓存 API 返回数据
-
-### Error Handling（待补充）
-
-前端：
-
-- Axios 统一拦截
-- Toast 统一错误提示
-- 禁止 alert()
-
-后端：
-
-- HTTPException 统一处理
-- ValidationError 统一处理
-- DatabaseError 统一处理
-
-### Logging（待补充）
-
-后端：
-
-- 使用 Python logging 模块
-
-前端：
-
-- 禁止提交 console.log
-- 使用统一 logger
-
-环境：
-
-- 开发：DEBUG
-- 生产：INFO
-
-### 环境变量（待补充）
-
-- 新配置同步更新 .env.example
-- 不允许默认 API Key
-- 所有敏感信息来自 .env
-
-### CI（待补充）
-
-PR 前需通过：
-
-- Backend Test
-- Type Check
-- Lint
-- Build
 
 ### Commit 规范
 ```
@@ -287,25 +189,6 @@ PR 前需通过：
 - 标出仍然存在的风险和下一步建议
 - 新 API 端点必须在 `app.openapi()` 的 paths 中可见
 - 前端修改必须 TypeScript 类型检查通过（`npx tsc --noEmit`）
-
-【待补充】
-
-前端：
-
-- [ ] Build
-- [ ] Lint
-- [ ] Type Check
-- [ ] Vitest
-
-后端：
-
-- [ ] Pytest
-- [ ] OpenAPI 检查
-
-文档：
-
-- [ ] README 更新
-- [ ] CLAUDE.md 同步更新（若涉及规范）
 
 ## 当前功能状态
 
@@ -338,21 +221,19 @@ PR 前需通过：
 | 标签管理页面（行内编辑/删除确认/TagManagement hooks） | ✅ |
 | 个人中心页面（ProfileForm/useUser hook） | ✅ |
 
-| **工程质量** | |
-| 前端组件测试（Vitest） | ⏳ 待补充 |
-| React Query 缓存策略统一 | ⏳ 待补充 |
-| Error Boundary | ⏳ 待补充 |
-| 全局异常页面（404/500） | ⏳ 待补充 |
-| Loading Skeleton 统一规范 | ⏳ 待补充 |
-| API 错误码统一处理 | ⏳ 待补充 |
-| 日志体系（前后端） | ⏳ 待补充 |
-| E2E 自动化测试 | ⏳ 待补充 |
-
 | **文档** | |
 | API 文档 | ✅ 已更新 |
 | 部署文档 | ✅ 已更新 |
 | 设计文档 | ✅ 已更新 |
 | 架构分析 | ✅ 已更新 |
+
+| **工程完善** | |
+|------|------|
+| Frontend Vitest | ⏳ 待补充 |
+| 全局异常处理 | ⏳ 待补充 |
+| Error Boundary | ⏳ 待补充 |
+| Loading 状态统一 | ⏳ 待补充 |
+| E2E 测试 | ⏳ 待补充 |
 
 ## 需要按需阅读的文档
 
@@ -364,33 +245,30 @@ PR 前需通过：
 
 ## 后续待完善（Roadmap）
 
-以下属于工程质量完善，不属于新增功能。
-
-### 测试
-
-- [ ] Frontend Vitest
-- [ ] Playwright E2E
-- [ ] API Contract Test
-
-### 工程
-
-- [ ] React Query Key Factory
+> 以下内容属于工程质量完善，不属于新增业务功能。
+### 第一优先级
+- [ ] 前端组件测试（Vitest）
 - [ ] Error Boundary
-- [ ] Loading 统一组件
-- [ ] Axios Error Handler
-- [ ] Logger
-- [ ] 全局 404
-- [ ] 全局 500
+- [ ] 全局异常页面（404 / 500）
+- [ ] Loading 统一处理
 
-### 文档
+---
 
-- [ ] Architecture Diagram
-- [ ] Database ER Diagram
-- [ ] Component Dependency Diagram
+### 第二优先级
+- [ ] API 错误处理统一
+- [ ] React Query 缓存策略优化
+- [ ] 页面性能优化
+- [ ] UI 细节优化
 
-### 开发体验
+---
 
-- [ ] Husky
-- [ ] lint-staged
-- [ ] Commitlint
-- [ ] GitHub Actions CI
+### 第三优先级
+- [ ] E2E 自动化测试
+- [ ] 架构文档补充
+- [ ] 数据库 ER 图
+- [ ] 组件关系图
+
+---
+
+所有 Roadmap 项目均按需完成，不作为当前开发阶段必须实现的内容。
+Claude Code 在执行任务时，仅在用户明确要求的情况下完成对应内容。

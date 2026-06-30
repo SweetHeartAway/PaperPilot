@@ -1,8 +1,12 @@
 import client from "./client";
-import type { Tag } from "../types/tag";
+import type { Tag, TagDetail } from "../types/tag";
 
 export function fetchTags(): Promise<Tag[]> {
   return client.get("/api/v1/tags/").then((res) => res.data);
+}
+
+export function fetchTagDetail(id: number): Promise<TagDetail> {
+  return client.get(`/api/v1/tags/${id}`).then((res) => res.data);
 }
 
 export function createTag(data: { name: string; color?: string }): Promise<Tag> {

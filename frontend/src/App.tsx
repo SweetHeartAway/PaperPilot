@@ -4,18 +4,12 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 import PaperListPage from "./pages/PaperListPage";
 import PaperCreatePage from "./pages/PaperCreatePage";
 import PaperDetailPage from "./pages/PaperDetailPage";
+import TagsPage from "./pages/TagsPage";
+import ProfilePage from "./pages/ProfilePage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
 import ToastContainer from "./components/ui/ToastContainer";
 import type { NavItem } from "./layout/Sidebar";
-
-function PlaceholderPage({ title }: { title: string }) {
-  return (
-    <div className="flex items-center justify-center py-20">
-      <p className="text-base text-gray-400">{title}</p>
-    </div>
-  );
-}
 
 const NAV_ITEMS: NavItem[] = [
   { to: "/papers", label: "论文" },
@@ -58,8 +52,8 @@ export default function App() {
             <Route path="papers" element={<PaperListPage />} />
             <Route path="papers/create" element={<PaperCreatePage />} />
             <Route path="papers/:id" element={<PaperDetailPage />} />
-            <Route path="tags" element={<PlaceholderPage title="标签管理页面（待实现）" />} />
-            <Route path="profile" element={<PlaceholderPage title="个人中心页面（待实现）" />} />
+            <Route path="tags" element={<TagsPage />} />
+            <Route path="profile" element={<ProfilePage />} />
           </Route>
         </Route>
       </Routes>

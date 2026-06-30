@@ -60,7 +60,9 @@
       "Bash(npx prettier *)",
       "Bash(git rm *)",
       "Bash(npx vite *)",
-      "Bash(npx oxlint@0.16.6 --deny-warnings src/)"
+      "Bash(npx oxlint@0.16.6 --deny-warnings src/)",
+      "Bash(kill %1)",
+      "Bash(wait)"
     ]
   },
   "hooks": {

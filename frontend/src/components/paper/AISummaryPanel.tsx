@@ -88,7 +88,7 @@ export default function AISummaryPanel({
     );
   }
 
-  // ─── No analysis yet ───
+  // ─── No analysis yet (null = not triggered) ───
   if (analysis === null) {
     return (
       <div className="rounded-lg border border-gray-200 bg-white">
@@ -125,6 +125,11 @@ export default function AISummaryPanel({
         </div>
       </div>
     );
+  }
+
+  // ─── analysis 不应为 undefined（isLoading 已在前置分支处理），此处为 TS 窄化守卫 ───
+  if (analysis === undefined) {
+    return null;
   }
 
   // ─── Pending / Processing ───

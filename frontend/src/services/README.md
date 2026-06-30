@@ -1,9 +1,9 @@
-# services — 服务层目录
+# services — 数据转换层目录
 
-封装与后端的交互逻辑，包括：
+在 api/ 层和 hooks/ 层之间的薄转换层：
 
-- API 调用函数（调用 `api/` 目录的 axios 实例）
-- 数据转换和格式化（将后端响应转为前端所需格式）
-- 缓存和状态管理（React Query 的 queryKey 定义）
+- **数据格式转换**（如 skip/limit ↔ page/pageSize 的转换）
+- **响应重组**（将后端原始响应转为前端业务模型）
+- **不直接调用 API** — 通过 api/ 层函数间接使用
 
-与 api/ 的区别：services 处理业务逻辑（调用多个 API、数据映射、错误聚合），api/ 只做 HTTP 请求。
+与 api/ 的区别：services 处理数据格式转换，api/ 只做 HTTP 请求。
