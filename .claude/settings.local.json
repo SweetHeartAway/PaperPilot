@@ -54,7 +54,11 @@
       "Read(//e/e/paper-manager-project/backend/app/api/**)",
       "Read(//e/e/paper-manager-project/frontend/src/**)",
       "Read(//e/e/paper-manager-project/**)",
-      "Read(//e/e/paper-manager-project/.claude/**)"
+      "Read(//e/e/paper-manager-project/.claude/**)",
+      "Bash(echo \"exit=$?\")",
+      "Bash(npx tsc *)",
+      "Bash(npx prettier *)",
+      "Bash(git rm *)"
     ]
   },
   "hooks": {

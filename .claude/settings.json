@@ -1,18 +1,2 @@
 {
-  "hooks": {
-    "onFileUpdate": [
-      {
-        "glob": "backend/**/*.py",
-        "run": "cd /e/paper-manager-project/backend && PYTHONPATH=. python -m pytest tests/ -x --tb=short 2>&1",
-        "description": "Backend 代码变更后自动运行 pytest，失败时 Claude 自动修复直到 PASS"
-      }
-    ],
-    "onPreCommit": [
-      {
-        "glob": "backend/**/*.py",
-        "run": "cd /e/paper-manager-project/backend && PYTHONPATH=. python -m pytest tests/ -x --tb=short 2>&1",
-        "description": "Backend commit 前自动运行 pytest"
-      }
-    ]
-  }
 }
