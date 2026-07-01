@@ -4,7 +4,7 @@
 
 - 本项目用于：AI 论文管理平台（PaperPilot），帮助研究人员管理和分析学术论文
 - 主要用户和场景：研究人员、学生、学术用户，需要管理论文库、上传 PDF、自动生成摘要和关键词
-- 当前阶段：后端全部完成（33 个 API 端点、59 个测试通过），前端 7 个核心页面已实现（Paper List、Paper Create、Paper Detail、Login/Register、Tags、Profile）
+- 当前阶段：后端全部完成（33 个 API 端点、59 个测试通过），前端 10 个核心页面已实现（Paper List、Paper Create、Paper Detail、Login/Register、Tags、Prompts、Profile、ErrorPage、NotFoundPage）
 - 暂时不做：全文搜索、团队协作/多用户共享、Celery 异步任务、移动端适配、第三方登录（OAuth）
 
 ## 工作方式
@@ -223,16 +223,24 @@ api/ (HTTP only) → services/ (transform) → hooks/ (React Query) → pages/ (
 | **前端** | |
 | Layout 系统（Header/Sidebar/Content/Footer） | ✅ |
 | 路由守卫（ProtectedRoute） | ✅ |
-| 论文列表页（分页/搜索/Skeleton 加载） | ✅ |
-| 论文上传页（拖拽/进度/重试） | ✅ |
+| 论文列表页（分页/搜索/Skeleton 加载/批量操作） | ✅ |
+| 论文上传页（拖拽/进度/重试/标签选择/日期） | ✅ |
 | 论文详情页（信息/AI 分析/Tag 三区布局） | ✅ |
-| AI 分析 4 Tab（摘要/Method/Result/Conclusion） | ✅ |
+| 论文编辑（行内编辑模式） | ✅ |
+| 论文删除（列表页 + 详情页） | ✅ |
+| PDF 文件删除 | ✅ |
+| AI 分析 5 Tab（摘要/Method/Result/Conclusion/关键词） | ✅ |
+| AI 分析版本管理（版本历史/Diff 对比） | ✅ |
+| AI 分析强制重新生成（force_regenerate） | ✅ |
+| 批量 AI 分析（列表页选择 → 一键分析） | ✅ |
+| Prompt 模板管理页面（CRUD/设为默认） | ✅ |
 | PaperCard 泛型化（可跨项目复用） | ✅ |
 | TagManager / AISummaryPanel 解耦（props 注入） | ✅ |
 | Toast 通知系统（成功/失败/Loading） | ✅ |
 | 登录/注册页面（表单验证 + 路由守卫联动） | ✅ |
-| 标签管理页面（行内编辑/删除确认/TagManagement hooks） | ✅ |
+| 标签管理页面（创建/行内编辑/删除确认） | ✅ |
 | 个人中心页面（ProfileForm/useUser hook） | ✅ |
+| 论文创建支持发表日期和标签选择 | ✅ |
 
 | **文档** | |
 | API 文档 | ✅ 已更新 |

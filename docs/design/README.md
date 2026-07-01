@@ -94,7 +94,8 @@ frontend/src/
 │   ├── auth.ts
 │   ├── papers.ts
 │   ├── ai.ts
-│   └── tags.ts
+│   ├── tags.ts
+│   └── prompts.ts
 ├── components/
 │   ├── ui/           # 9 个纯 UI 基件（EmptyState, ErrorState, Pagination, Skeleton, Spinner, TabBar, UploadProgress, FileUploadArea, ToastContainer）
 │   ├── paper/        # 6 个论文领域组件（PaperCard, PaperList, PaperCardSkeleton, PaperInfo, AISummaryPanel, TagManager）
@@ -104,13 +105,16 @@ frontend/src/
 │   ├── usePapers.ts
 │   ├── useTags.ts
 │   ├── useTagManagement.ts
+│   ├── usePrompts.ts
+│   ├── useCreatePaper.ts
+│   ├── useAuth.ts
 │   ├── useUser.ts
 │   └── useToast.ts
 ├── layout/           # 6 个纯 props 布局组件
 │   ├── Header.tsx / Sidebar.tsx / Content.tsx / Footer.tsx
 │   ├── MainLayout.tsx / AuthLayout.tsx
 │   └── index.ts
-├── pages/            # 9 个页面（PaperList, PaperCreate, PaperDetail, Login, Register, Tags, Profile, ErrorPage, NotFoundPage）
+├── pages/            # 10 个页面（PaperList, PaperCreate, PaperDetail, Login, Register, Tags, Prompts, Profile, ErrorPage, NotFoundPage）
 ├── services/         # 数据转换层
 │   ├── paperService.ts
 │   ├── tagService.ts
@@ -119,10 +123,12 @@ frontend/src/
 │   ├── authStore.ts
 │   └── toastStore.ts
 ├── types/            # TypeScript 类型定义
-│   ├── paper.ts / auth.ts / user.ts / tag.ts / ai.ts
+│   ├── paper.ts / auth.ts / user.ts / tag.ts / ai.ts / prompt.ts
 ├── utils/
 │   ├── format.ts
-│   └── token.ts
+│   ├── token.ts
+│   ├── error.ts
+│   └── queryKeys.ts
 └── assets/
 ```
 
@@ -136,7 +142,7 @@ frontend/src/
 |------|------|------|------|------|
 | `auth.py` | `/api/v1/auth` | 2 | 无 | 注册、登录 |
 | `users.py` | `/api/v1/users` | 2 | 全部 | 当前用户、用户查询 |
-| `papers.py` | `/api/v1/papers` | 13 | 全部 | 论文 CRUD + PDF + 标签 + AI 分析 |
+| `papers.py` | `/api/v1/papers` | 13 | 全部 | 论文 CRUD + PDF + 标签 + AI 分析（含版本/批量） |
 | `tags.py` | `/api/v1/tags` | 5 | 全部 | 标签 CRUD |
 | `ai.py` | `/api/v1/ai` | 3 | 全部 | 旧版 AI 接口（遗留） |
 | `prompts.py` | `/api/v1/prompts` | 6 | 全部 | 自定义 Prompt 模板 |
@@ -212,6 +218,7 @@ except ValueError as e:
           <Route path="papers/create"    element={<PaperCreatePage />} />
           <Route path="papers/:id"       element={<PaperDetailPage />} />
           <Route path="tags"             element={<TagsPage />} />
+          <Route path="prompts"          element={<PromptsPage />} />
           <Route path="profile"          element={<ProfilePage />} />
         </Route>
       </Route>
@@ -243,11 +250,11 @@ PaperListPage
 
 | 分类 | 数量 | 特点 |
 |------|------|------|
-| UI 基件 | 9 | 纯 props 驱动，零业务逻辑，可跨项目复用 |
+| UI 基件 | 12 | 纯 props 驱动，零业务逻辑，可跨项目复用 |
 | 领域组件 | 6 | 通过 props 注入回调，不直接 import hooks |
 | Layout | 6 | 纯 props 驱动，零业务逻辑 |
 | 认证组件 | 1 | ProtectedRoute（路由守卫） |
-| 页面 | 9 | 编排层：调用 hooks → 传入组件 |
+| 页面 | 10 | 编排层：调用 hooks → 传入组件 |
 
 ### 3.4 状态管理双层架构
 
@@ -281,8 +288,9 @@ toastStore: toasts[], add(), remove(), clear()
 // 详情
 ["papers", "detail", id]
 
-// AI 分析（带类型）
+// AI 分析（带类型和可选版本号）
 ["papers", "ai-summary", paperId, analysisType]
+["papers", "ai-summary", paperId, analysisType, version]  // 指定版本
 
 // 标签
 ["tags"]
@@ -305,8 +313,12 @@ toastStore: toasts[], add(), remove(), clear()
 
 ```
 论文创建 → queryKeys.papers.lists()（列表）
+论文更新 → queryKeys.papers.detail(paperId) + lists()（详情+列表）
+论文删除 → queryKeys.papers.lists()（列表）
 标签变更 → queryKeys.papers.detail(paperId)（仅详情，不波及 AI 摘要）
-AI 触发 → queryKeys.papers.aiSummary(paperId, type)（AI 分析）
+AI 触发 → queryKeys.papers.aiSummary(paperId, type)（AI 分析，含所有版本）
+批量 AI 触发 → queryKeys.papers.aiSummaries()（全部 AI 分析）
+Prompt 变更 → promptKeys.lists()（模板列表）
 ```
 
 QueryClient 全局配置：staleTime=30s, retry=1, refetchOnWindowFocus=false。
@@ -336,7 +348,7 @@ QueryClient 全局配置：staleTime=30s, retry=1, refetchOnWindowFocus=false。
 | Service | 导入者 | 职责 |
 |---------|--------|------|
 | `paperService.ts` | `usePapers` | 分页参数转换（skip/limit ↔ page/pageSize） |
-| `tagService.ts` | `useTagManagement` | 标签 API 调用重导出 |
+| `tagService.ts` | `useTagManagement` | 标签 API 调用重导出（含 createTag） |
 | `userService.ts` | `useUser` | 用户 API 调用重导出 |
 
 前端的 api/ → services/ → hooks/ 分层原则：

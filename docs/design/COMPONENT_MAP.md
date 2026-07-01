@@ -18,6 +18,7 @@
             /papers/create  -> PaperCreatePage         (懒加载)
             /papers/:id     -> PaperDetailPage         (懒加载)
             /tags           -> TagsPage                (懒加载)
+            /prompts        -> PromptsPage             (懒加载)
             /profile        -> ProfilePage             (懒加载)
         * -> NotFoundPage    (懒加载)
       </Routes>
@@ -52,7 +53,10 @@ RegisterPage -> useRegister() -> registerApi() -> POST /api/v1/auth/register
 
 ```
 PaperListPage -> usePaperList() -> paperService.getPaperList() -> fetchPaperList() -> GET /api/v1/papers/
-  Component: PaperList -> PaperCard (memo) -> formatDate()
+             -> useDeletePaper() -> deletePaper() -> DELETE /api/v1/papers/:id
+             -> useBatchAIAnalysis() -> batchTriggerAIAnalysis() -> POST /api/v1/papers/batch/ai-summary
+  State: batchMode, selectedIds (Set)
+  Component: PaperList -> PaperCard (memo) -> formatDate(), renderTopRight slot (删除复选框)
   UI: PaperCardSkeleton -> Skeleton
   UI: EmptyState, ErrorState -> WarningIcon
   UI: Pagination
@@ -63,11 +67,14 @@ PaperListPage -> usePaperList() -> paperService.getPaperList() -> fetchPaperList
 ### PaperCreatePage
 
 ```
-PaperCreatePage -> useCreatePaper() -> createPaper() -> POST /api/v1/papers/
+PaperCreatePage -> useCreatePaper() -> createPaper() -> POST /api/v1/papers/ (含 publication_date + tag_ids)
                 -> uploadPaperFile() -> POST /api/v1/papers/:id/upload (multipart)
+                -> useAllTags() -> tagService.fetchTags() -> fetchTags() -> GET /api/v1/tags/
+  State: publicationDate, selectedTagIds
   Hook: useToast()
   Component: FileUploadArea -> UploadArrowIcon, XCircleIcon, formatFileSize()
   UI: UploadProgress
+  UI: Tag pill selector (多选按钮组)
   Util: getErrorMessage()
 ```
 
@@ -76,11 +83,17 @@ PaperCreatePage -> useCreatePaper() -> createPaper() -> POST /api/v1/papers/
 ```
 PaperDetailPage -> usePaper() -> fetchPaper() -> GET /api/v1/papers/:id
                 -> usePaperAISummary() -> fetchPaperAISummary() -> GET /api/v1/papers/:id/ai-summary
-                -> useTriggerAIAnalysis() -> POST /api/v1/papers/:id/ai-summary
+                -> useTriggerAIAnalysis() -> POST /api/v1/papers/:id/ai-summary (含 forceRegenerate)
+                -> useUpdatePaper() -> updatePaper() -> PUT /api/v1/papers/:id
+                -> useDeletePaper() -> deletePaper() -> DELETE /api/v1/papers/:id
+                -> useDeletePaperFile() -> deletePaperFile() -> DELETE /api/v1/papers/:id/file
+                -> usePaperAISummaryVersions() -> GET /api/v1/papers/:id/ai-summary/versions
+                -> usePaperAISummaryDiff() -> GET /api/v1/papers/:id/ai-summary/versions/diff?v1=&v2=
                 -> useAddPaperTag() -> addPaperTag() -> POST /api/v1/papers/:id/tags
                 -> useRemovePaperTag() -> removePaperTag() -> DELETE /api/v1/papers/:id/tags/:tagId
-  Component: PaperInfo -> formatDate(), formatFileSize()
-  Component: AISummaryPanel -> Skeleton, Spinner, TabBar
+  State: isEditing, editForm, showHistory, selectedVersion, diffVersions
+  Component: PaperInfo -> formatDate(), formatFileSize() + 编辑模式/删除按钮/文件删除
+  Component: AISummaryPanel -> Skeleton, Spinner, TabBar, TabBar/TriggerButton/VersionHistory/DiffView
   Component: TagManager -> Spinner, XIcon
   UI: PaperDetailSkeleton -> Skeleton
   UI: EmptyState, ErrorState -> WarningIcon
@@ -91,9 +104,25 @@ PaperDetailPage -> usePaper() -> fetchPaper() -> GET /api/v1/papers/:id
 
 ```
 TagsPage -> useAllTags() -> tagService.fetchTags() -> fetchTags() -> GET /api/v1/tags/
+         -> useCreateTag() -> tagService.createTag() -> createTag() -> POST /api/v1/tags/
          -> useUpdateTag() -> tagService.updateTag() -> updateTag() -> PUT /api/v1/tags/:id
          -> useDeleteTag() -> tagService.deleteTag() -> deleteTag() -> DELETE /api/v1/tags/:id
+  State: showCreate, newTagName
   Hook: useToast()
+  UI: Skeleton, EmptyState, ErrorState -> WarningIcon
+  Util: getErrorMessage()
+```
+
+### PromptsPage
+
+```
+PromptsPage -> usePromptTemplates() -> fetchPromptTemplates() -> GET /api/v1/prompts/
+            -> useCreatePromptTemplate() -> createPromptTemplate() -> POST /api/v1/prompts/
+            -> useUpdatePromptTemplate() -> updatePromptTemplate() -> PUT /api/v1/prompts/:id
+            -> useDeletePromptTemplate() -> deletePromptTemplate() -> DELETE /api/v1/prompts/:id
+            -> useSetDefaultPromptTemplate() -> setDefaultPromptTemplate() -> POST /api/v1/prompts/:id/set-default
+  State: showCreate, createForm, editingId, editForm, deletingId
+  Component: PromptForm (内联表单, 含 system_prompt 文本域)
   UI: Skeleton, EmptyState, ErrorState -> WarningIcon
   Util: getErrorMessage()
 ```
@@ -155,8 +184,9 @@ ProfilePage -> useCurrentUser() -> userService.fetchCurrentUser() -> getCurrentU
 
 | 类型文件 | 被使用方 |
 |---------|---------|
-| types/paper.ts | PaperCard, PaperInfo, PaperList, usePapers |
-| types/ai.ts | AISummaryPanel, usePaperAISummary |
-| types/tag.ts | TagManager, PaperCard, PaperInfo |
+| types/paper.ts | PaperCard, PaperInfo, PaperList, usePapers, PaperCreatePage |
+| types/ai.ts | AISummaryPanel, usePaperAISummary, api/ai |
+| types/tag.ts | TagManager, PaperCard, PaperInfo, PaperCreatePage |
 | types/user.ts | ProfileForm, ProfilePage |
 | types/auth.ts | useAuth, api/auth |
+| types/prompt.ts | PromptsPage, usePrompts, api/prompts |
