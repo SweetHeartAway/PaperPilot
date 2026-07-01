@@ -1,10 +1,6 @@
 import type { AxiosProgressEvent } from "axios";
 import client from "./client";
-import type { Paper, PaperListParams, PaperListResponse } from "../types/paper";
-
-export function fetchPapers(params?: PaperListParams): Promise<Paper[]> {
-  return client.get("/api/v1/papers/", { params }).then((res) => res.data.items);
-}
+import type { Paper, PaperListResponse } from "../types/paper";
 
 export function fetchPaperList(params: {
   skip: number;

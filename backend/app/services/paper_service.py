@@ -8,7 +8,7 @@ import logging
 from app.models.paper import Paper
 from app.schemas.paper import PaperCreate, PaperUpdate
 from app.services.file_service import _remove_file
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 logger = logging.getLogger(__name__)
 
@@ -63,7 +63,13 @@ def get_papers(
         )
 
     total = query.count()
-    papers = query.order_by(Paper.updated_at.desc()).offset(skip).limit(limit).all()
+    papers = (
+        query.options(selectinload(Paper.tags))
+        .order_by(Paper.updated_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
     return papers, total
 
 

@@ -62,7 +62,8 @@
       "Bash(npx vite *)",
       "Bash(npx oxlint@0.16.6 --deny-warnings src/)",
       "Bash(kill %1)",
-      "Bash(wait)"
+      "Bash(wait)",
+      "Bash(node -e \"const p=require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\); const j=JSON.parse\\(p\\); console.log\\(JSON.stringify\\(j.prettier||'no prettier field'\\)\\)\")"
     ]
   },
   "hooks": {

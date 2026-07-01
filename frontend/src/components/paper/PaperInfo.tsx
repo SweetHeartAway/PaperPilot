@@ -1,16 +1,26 @@
-import { usePaper } from "../../hooks/usePapers";
 import { formatDate, formatFileSize } from "../../utils/format";
-import { getPaperDownloadUrl } from "../../api/papers";
 import ErrorState from "../ui/ErrorState";
 import Skeleton from "../ui/Skeleton";
+import type { Paper } from "../../types/paper";
 
 interface PaperInfoProps {
-  paperId: number;
+  paper: Paper | undefined;
+  isLoading: boolean;
+  isError: boolean;
+  error: Error | null;
+  onRetry: () => void;
+  /** 论文文件下载 URL（需由父层拼接，避免组件直接引用 api/） */
+  downloadUrl?: string;
 }
 
-export default function PaperInfo({ paperId }: PaperInfoProps) {
-  const { data: paper, isLoading, isError, error, refetch } = usePaper(paperId);
-
+export default function PaperInfo({
+  paper,
+  isLoading,
+  isError,
+  error,
+  onRetry,
+  downloadUrl,
+}: PaperInfoProps) {
   if (isLoading) {
     return (
       <div role="status" aria-label="加载中" className="space-y-4">
@@ -36,7 +46,7 @@ export default function PaperInfo({ paperId }: PaperInfoProps) {
       <ErrorState
         title="加载论文信息失败"
         message={error instanceof Error ? error.message : "请检查网络连接后重试"}
-        onRetry={() => refetch()}
+        onRetry={onRetry}
       />
     );
   }
@@ -79,10 +89,10 @@ export default function PaperInfo({ paperId }: PaperInfoProps) {
         </div>
       )}
 
-      {paper.file_uuid && (
+      {paper.file_uuid && downloadUrl && (
         <div className="mt-6">
           <a
-            href={getPaperDownloadUrl(paper.id)}
+            href={downloadUrl}
             download
             className="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
           >

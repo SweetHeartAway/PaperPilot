@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { usePaper, usePaperAISummary, useTriggerAIAnalysis } from "../hooks/usePapers";
 import { useAddPaperTag, useRemovePaperTag } from "../hooks/useTags";
+import client from "../api/client";
 import Content from "../layout/Content";
 import PaperInfo from "../components/paper/PaperInfo";
 import AISummaryPanel from "../components/paper/AISummaryPanel";
@@ -115,7 +116,18 @@ export default function PaperDetailPage() {
           {/* Top row: PaperInfo + AISummaryPanel side by side */}
           <div className="flex flex-col gap-6 lg:flex-row">
             <div className="flex-1">
-              <PaperInfo paperId={paperId} />
+              <PaperInfo
+                paper={paper}
+                isLoading={isLoading}
+                isError={isError}
+                error={error}
+                onRetry={() => refetch()}
+                downloadUrl={
+                  paper.file_uuid
+                    ? `${client.defaults.baseURL}/api/v1/papers/${paper.id}/download`
+                    : undefined
+                }
+              />
             </div>
             <div className="w-full lg:w-96">
               <AISummaryPanel
