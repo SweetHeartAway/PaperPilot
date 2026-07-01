@@ -19,5 +19,5 @@ export function register(data: RegisterRequest): Promise<User> {
 }
 
 export function getCurrentUser(): Promise<User> {
-  return client.get("/api/v1/auth/me").then((res) => res.data);
+  return client.get("/api/v1/users/me").then((res) => res.data);
 }
