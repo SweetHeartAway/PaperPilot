@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   usePaper,
@@ -11,12 +11,13 @@ import {
   usePaperAISummaryDiff,
 } from "../hooks/usePapers";
 import { useAddPaperTag, useRemovePaperTag } from "../hooks/useTags";
-import { getPaperDownloadUrl } from "../api/papers";
+import { getPaperDownloadUrl, fetchPaperFileBlob } from "../api/papers";
 import Content from "../layout/Content";
 import PaperInfo from "../components/paper/PaperInfo";
 import type { PaperEditForm } from "../components/paper/PaperInfo";
 import PaperDetailSkeleton from "../components/paper/PaperDetailSkeleton";
 import AISummaryPanel from "../components/paper/AISummaryPanel";
+import PDFViewer from "../components/paper/PDFViewer";
 import TagManager from "../components/paper/TagManager";
 import type { Tab } from "../components/ui/TabBar";
 import ErrorState from "../components/ui/ErrorState";
@@ -25,9 +26,9 @@ import { getErrorMessage } from "../utils/error";
 
 const AI_TABS: Tab[] = [
   { key: "summary", label: "摘要" },
-  { key: "method", label: "Method" },
-  { key: "result", label: "Result" },
-  { key: "conclusion", label: "Conclusion" },
+  { key: "method", label: "方法" },
+  { key: "result", label: "结果" },
+  { key: "conclusion", label: "结论" },
   { key: "keywords", label: "关键词" },
 ];
 
@@ -101,6 +102,60 @@ export default function PaperDetailPage() {
     diffVersions.v1,
     diffVersions.v2,
   );
+
+  // ─── PDF Viewer ───
+  const [pdfData, setPdfData] = useState<ArrayBuffer | null>(null);
+  const [pdfLoading, setPdfLoading] = useState(false);
+  const [pdfError, setPdfError] = useState<string | null>(null);
+  const [pdfVisible, setPdfVisible] = useState(false);
+
+  useEffect(() => {
+    if (!paper?.file_uuid) {
+      setPdfData(null);
+      setPdfError(null);
+      setPdfLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setPdfLoading(true);
+    setPdfError(null);
+
+    fetchPaperFileBlob(paper.id)
+      .then((blob) => blob.arrayBuffer())
+      .then((buffer) => {
+        if (!cancelled) {
+          setPdfData(buffer);
+          setPdfLoading(false);
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setPdfError(getErrorMessage(err, "加载 PDF 文件失败"));
+          setPdfLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [paper?.id, paper?.file_uuid]);
+
+  const handleRetryPdf = useCallback(() => {
+    if (!paper?.id) return;
+    setPdfLoading(true);
+    setPdfError(null);
+    fetchPaperFileBlob(paper.id)
+      .then((blob) => blob.arrayBuffer())
+      .then((buffer) => {
+        setPdfData(buffer);
+        setPdfLoading(false);
+      })
+      .catch((err) => {
+        setPdfError(getErrorMessage(err, "加载 PDF 文件失败"));
+        setPdfLoading(false);
+      });
+  }, [paper?.id]);
 
   // ─── Handlers ───
 
@@ -249,6 +304,39 @@ export default function PaperDetailPage() {
                 onClearDiff={handleClearDiff}
               />
             </div>
+          </div>
+
+          {/* PDF 内联查看 */}
+          <div className="mt-6">
+            <button
+              onClick={() => setPdfVisible((v) => !v)}
+              className="mb-3 flex items-center gap-2 text-sm font-medium text-gray-700 transition-colors hover:text-gray-900"
+            >
+              <svg
+                className={`h-4 w-4 transition-transform ${pdfVisible ? "rotate-90" : ""}`}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              </svg>
+              {paper.file_uuid ? "PDF 原文" : "PDF 文件"}
+              {paper.file_uuid && (
+                <span className="text-xs font-normal text-gray-400">
+                  {pdfVisible ? "点击收起" : "点击查看"}
+                </span>
+              )}
+            </button>
+            {pdfVisible && (
+              <PDFViewer
+                data={pdfData}
+                loading={pdfLoading}
+                error={pdfError}
+                onRetry={handleRetryPdf}
+                fileName={paper.original_filename ?? undefined}
+              />
+            )}
           </div>
 
           {/* Bottom: TagManager full width */}

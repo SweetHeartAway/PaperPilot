@@ -62,6 +62,13 @@ export function getPaperDownloadUrl(paperId: number): string {
   return (client.defaults.baseURL as string) + `/api/v1/papers/${paperId}/download`;
 }
 
+/** 获取论文 PDF 文件二进制数据（用于内联查看） */
+export function fetchPaperFileBlob(paperId: number): Promise<Blob> {
+  return client
+    .get(`/api/v1/papers/${paperId}/download`, { responseType: "blob" })
+    .then((res) => res.data);
+}
+
 export function uploadPaperFile(
   paperId: number,
   file: File,

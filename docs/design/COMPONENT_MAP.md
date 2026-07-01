@@ -82,18 +82,20 @@ PaperCreatePage -> useCreatePaper() -> createPaper() -> POST /api/v1/papers/ (�
 
 ```
 PaperDetailPage -> usePaper() -> fetchPaper() -> GET /api/v1/papers/:id
-                -> usePaperAISummary() -> fetchPaperAISummary() -> GET /api/v1/papers/:id/ai-summary
-                -> useTriggerAIAnalysis() -> POST /api/v1/papers/:id/ai-summary (含 forceRegenerate)
-                -> useUpdatePaper() -> updatePaper() -> PUT /api/v1/papers/:id
-                -> useDeletePaper() -> deletePaper() -> DELETE /api/v1/papers/:id
-                -> useDeletePaperFile() -> deletePaperFile() -> DELETE /api/v1/papers/:id/file
-                -> usePaperAISummaryVersions() -> GET /api/v1/papers/:id/ai-summary/versions
-                -> usePaperAISummaryDiff() -> GET /api/v1/papers/:id/ai-summary/versions/diff?v1=&v2=
-                -> useAddPaperTag() -> addPaperTag() -> POST /api/v1/papers/:id/tags
-                -> useRemovePaperTag() -> removePaperTag() -> DELETE /api/v1/papers/:id/tags/:tagId
-  State: isEditing, editForm, showHistory, selectedVersion, diffVersions
+             -> usePaperAISummary() -> fetchPaperAISummary() -> GET /api/v1/papers/:id/ai-summary
+             -> useTriggerAIAnalysis() -> POST /api/v1/papers/:id/ai-summary (含 forceRegenerate)
+             -> useUpdatePaper() -> updatePaper() -> PUT /api/v1/papers/:id
+             -> useDeletePaper() -> deletePaper() -> DELETE /api/v1/papers/:id
+             -> useDeletePaperFile() -> deletePaperFile() -> DELETE /api/v1/papers/:id/file
+             -> usePaperAISummaryVersions() -> GET /api/v1/papers/:id/ai-summary/versions
+             -> usePaperAISummaryDiff() -> GET /api/v1/papers/:id/ai-summary/versions/diff?v1=&v2=
+             -> useAddPaperTag() -> addPaperTag() -> POST /api/v1/papers/:id/tags
+             -> useRemovePaperTag() -> removePaperTag() -> DELETE /api/v1/papers/:id/tags/:tagId
+             -> fetchPaperFileBlob() -> GET /api/v1/papers/:id/download (responseType: blob)
+  State: isEditing, editForm, showHistory, selectedVersion, diffVersions, pdfData/pdfLoading/pdfError/pdfVisible
   Component: PaperInfo -> formatDate(), formatFileSize() + 编辑模式/删除按钮/文件删除
   Component: AISummaryPanel -> Skeleton, Spinner, TabBar, TabBar/TriggerButton/VersionHistory/DiffView
+  Component: PDFViewer -> pdfjs-dist 页面渲染(翻页/缩放/Canvas)
   Component: TagManager -> Spinner, XIcon
   UI: PaperDetailSkeleton -> Skeleton
   UI: EmptyState, ErrorState -> WarningIcon
@@ -164,6 +166,7 @@ ProfilePage -> useCurrentUser() -> userService.fetchCurrentUser() -> getCurrentU
   PaperCard -> formatDate()
   PaperInfo -> formatDate(), formatFileSize()
   FileUploadArea -> formatFileSize()
+  PDFViewer -> pdfjs-dist
 ```
 
 ## 分层数据流

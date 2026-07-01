@@ -98,7 +98,7 @@ frontend/src/
 │   └── prompts.ts
 ├── components/
 │   ├── ui/           # 9 个纯 UI 基件（EmptyState, ErrorState, Pagination, Skeleton, Spinner, TabBar, UploadProgress, FileUploadArea, ToastContainer）
-│   ├── paper/        # 6 个论文领域组件（PaperCard, PaperList, PaperCardSkeleton, PaperInfo, AISummaryPanel, TagManager）
+│   ├── paper/        # 7 个论文领域组件（PaperCard, PaperList, PaperCardSkeleton, PaperInfo, AISummaryPanel, PDFViewer, TagManager）
 │   ├── auth/         # 1 个认证组件（ProtectedRoute）
 │   └── user/         # 2 个用户组件（ProfileForm, ProfileSkeleton）
 ├── hooks/            # React Query 封装
@@ -251,7 +251,7 @@ PaperListPage
 | 分类 | 数量 | 特点 |
 |------|------|------|
 | UI 基件 | 12 | 纯 props 驱动，零业务逻辑，可跨项目复用 |
-| 领域组件 | 6 | 通过 props 注入回调，不直接 import hooks |
+| 领域组件 | 7 | 通过 props 注入回调，不直接 import hooks |
 | Layout | 6 | 纯 props 驱动，零业务逻辑 |
 | 认证组件 | 1 | ProtectedRoute（路由守卫） |
 | 页面 | 10 | 编排层：调用 hooks → 传入组件 |
@@ -416,6 +416,7 @@ export async function getPaperList(query: PaperListQuery) {
 ### 6.3 代码分割与性能优化
 
 - **React.lazy 代码分割**：6 个非首屏页面（PaperDetailPage、PaperCreatePage、TagsPage、ProfilePage、ErrorPage、NotFoundPage）使用 `React.lazy()` 动态加载，主 chunk 从 373KB 降至 281KB（-25%）
+- **pdfjs-dist worker**：PDF 内联查看器的 worker 文件通过 Vite `new URL(…, import.meta.url)` 自动提取为独立 chunk（~1.2MB），仅在访问论文详情页时按需加载
 - **React.memo**：PaperCard 和 PaperList 包裹 `memo()`，避免不必要的重渲染
 - **模块级常量**：AI_TABS 提取为 `PaperDetailPage.tsx` 的模块级常量，避免每次渲染重新创建数组
 

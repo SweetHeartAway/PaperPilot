@@ -4,7 +4,7 @@
 
 - 本项目用于：AI 论文管理平台（PaperPilot），帮助研究人员管理和分析学术论文
 - 主要用户和场景：研究人员、学生、学术用户，需要管理论文库、上传 PDF、自动生成摘要和关键词
-- 当前阶段：后端全部完成（33 个 API 端点、59 个测试通过），前端 10 个核心页面已实现（Paper List、Paper Create、Paper Detail、Login/Register、Tags、Prompts、Profile、ErrorPage、NotFoundPage）
+- 当前阶段：后端全部完成（33 个 API 端点、59 个测试通过），前端 10 个核心页面 + PDF 内联查看器已实现（Paper List、Paper Create、Paper Detail、Login/Register、Tags、Prompts、Profile、ErrorPage、NotFoundPage）
 - 暂时不做：全文搜索、团队协作/多用户共享、Celery 异步任务、移动端适配、第三方登录（OAuth）
 
 ## 工作方式
@@ -37,7 +37,7 @@ paper-manager-project/
 │       ├── api/              # HTTP 请求封装（axios），零业务逻辑
 │       ├── components/       # 可复用 UI 组件
 │       │   ├── ui/           # 纯 UI 基件（EmptyState, Pagination, Skeleton, TabBar 等）
-│       │   ├── paper/        # 论文领域组件（PaperCard, TagManager, AISummaryPanel 等）
+│       │   ├── paper/        # 论文领域组件（PaperCard, TagManager, AISummaryPanel, PDFViewer 等）
 │       │   └── auth/         # 认证相关组件（ProtectedRoute）
 │       ├── hooks/            # React Query + 自定义 hooks
 │       ├── layout/           # 纯 props 驱动的布局系统（Header/Sidebar/Content/Footer）
@@ -212,6 +212,7 @@ api/ (HTTP only) → services/ (transform) → hooks/ (React Query) → pages/ (
 | 论文 CRUD（含 DOI 唯一性校验） | ✅ |
 | 标签（多对多，自动创建，CRUD） | ✅ |
 | PDF 上传/下载/删除 | ✅ |
+| PDF 内联查看器（pdfjs-dist） | ✅ |
 | AI 分析摘要（生成/缓存/重新生成） | ✅ |
 | 批量 AI 分析 | ✅ |
 | AI 分析版本对比 | ✅ |

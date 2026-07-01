@@ -54,9 +54,9 @@ export interface AISummaryPanelProps {
 
 const TAB_LABELS: Record<string, string> = {
   summary: "摘要",
-  method: "Method",
-  result: "Result",
-  conclusion: "Conclusion",
+  method: "方法",
+  result: "结果",
+  conclusion: "结论",
 };
 
 function getTabLabel(tab: string): string {
