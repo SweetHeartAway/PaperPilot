@@ -1,6 +1,6 @@
 import logging
 
-from app.api.v1 import ai, auth, papers, prompts, tags, users
+from app.api.v1 import ai, auth, chat, papers, prompts, tags, users
 from app.core.config import settings
 from app.models import Base
 from app.utils.database import engine
@@ -52,6 +52,7 @@ app.include_router(users.router, prefix="/api/v1/users", tags=["users"])
 app.include_router(papers.router, prefix="/api/v1/papers", tags=["papers"])
 app.include_router(tags.router, prefix="/api/v1/tags", tags=["tags"])
 app.include_router(ai.router, prefix="/api/v1/ai", tags=["ai"])
+app.include_router(chat.router, prefix="/api/v1", tags=["chat"])
 app.include_router(prompts.router, prefix="/api/v1", tags=["prompts"])
 
 

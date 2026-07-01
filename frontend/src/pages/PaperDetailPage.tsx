@@ -18,6 +18,7 @@ import type { PaperEditForm } from "../components/paper/PaperInfo";
 import PaperDetailSkeleton from "../components/paper/PaperDetailSkeleton";
 import AISummaryPanel from "../components/paper/AISummaryPanel";
 import PDFViewer from "../components/paper/PDFViewer";
+import ChatPanel from "../components/paper/ChatPanel";
 import TagManager from "../components/paper/TagManager";
 import type { Tab } from "../components/ui/TabBar";
 import ErrorState from "../components/ui/ErrorState";
@@ -337,6 +338,11 @@ export default function PaperDetailPage() {
                 fileName={paper.original_filename ?? undefined}
               />
             )}
+          </div>
+
+          {/* Chat: Paper Q&A */}
+          <div className="mt-6">
+            <ChatPanel paperId={paperId} hasContent={!!paper.file_uuid} />
           </div>
 
           {/* Bottom: TagManager full width */}

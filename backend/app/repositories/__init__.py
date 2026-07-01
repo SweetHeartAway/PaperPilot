@@ -8,7 +8,7 @@
 """
 
 from app.repositories.vector import (
-    IndexItem,
+    ChunkItem,
     SearchResult,
     VectorRepository,
 )
@@ -17,6 +17,6 @@ from app.repositories.vector_chroma import ChromaVectorRepository
 __all__ = [
     "VectorRepository",
     "ChromaVectorRepository",
-    "IndexItem",
+    "ChunkItem",
     "SearchResult",
 ]

@@ -98,6 +98,16 @@ def upload_paper_file(db: Session, paper_id: int, user_id: int, file: UploadFile
     db.refresh(db_paper)
     if stale_count > 0:
         logger.info("已失效 %d 条 AI 分析缓存: paper_id=%s", stale_count, paper_id)
+
+    # 自动索引论文到向量数据库（Chat 功能用）
+    try:
+        from app.services.indexing_service import index_paper
+
+        indexed = index_paper(db, paper_id, user_id)
+        logger.info("论文已自动索引: paper_id=%s, chunks=%d", paper_id, indexed)
+    except Exception as e:
+        logger.warning("论文索引失败（不影响上传）: paper_id=%s, error=%s", paper_id, e)
+
     return db_paper
 
 
@@ -135,4 +145,13 @@ def delete_paper_file(db: Session, paper_id: int, user_id: int) -> bool:
 
     db.commit()
     db.refresh(db_paper)
+
+    # 清理向量索引
+    try:
+        from app.services.indexing_service import remove_paper_index
+
+        remove_paper_index(paper_id)
+    except Exception as e:
+        logger.warning("向量索引清理失败（不影响文件删除）: paper_id=%s, error=%s", paper_id, e)
+
     return True

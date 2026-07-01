@@ -92,10 +92,12 @@ PaperDetailPage -> usePaper() -> fetchPaper() -> GET /api/v1/papers/:id
              -> useAddPaperTag() -> addPaperTag() -> POST /api/v1/papers/:id/tags
              -> useRemovePaperTag() -> removePaperTag() -> DELETE /api/v1/papers/:id/tags/:tagId
              -> fetchPaperFileBlob() -> GET /api/v1/papers/:id/download (responseType: blob)
+             -> usePaperChat() -> askPaperQuestion() -> POST /api/v1/papers/:id/chat
   State: isEditing, editForm, showHistory, selectedVersion, diffVersions, pdfData/pdfLoading/pdfError/pdfVisible
   Component: PaperInfo -> formatDate(), formatFileSize() + 编辑模式/删除按钮/文件删除
   Component: AISummaryPanel -> Skeleton, Spinner, TabBar, TabBar/TriggerButton/VersionHistory/DiffView
   Component: PDFViewer -> pdfjs-dist 页面渲染(翻页/缩放/Canvas)
+  Component: ChatPanel -> 基于 RAG 的论文对话（消息列表 + 输入框 + 来源引用）
   Component: TagManager -> Spinner, XIcon
   UI: PaperDetailSkeleton -> Skeleton
   UI: EmptyState, ErrorState -> WarningIcon
@@ -133,9 +135,15 @@ PromptsPage -> usePromptTemplates() -> fetchPromptTemplates() -> GET /api/v1/pro
 
 ```
 ProfilePage -> useCurrentUser() -> userService.fetchCurrentUser() -> getCurrentUser() -> GET /api/v1/users/me
+            -> useUpdateProfile() -> updateProfile() -> updateCurrentUser() -> PUT /api/v1/users/me
+            -> useChangePassword() -> changePassword() -> changeMyPassword() -> POST /api/v1/users/me/change-password
+            -> useUploadAvatar() -> uploadAvatar() -> uploadMyAvatar() -> POST /api/v1/users/me/avatar (multipart)
+            -> useRemoveAvatar() -> removeAvatar() -> deleteMyAvatar() -> DELETE /api/v1/users/me/avatar
+            -> usePromptTemplates() -> fetchPromptTemplates() -> GET /api/v1/prompts/
             <- authStore: enabled: !!token
-  Component: ProfileForm
-  UI: ProfileSkeleton -> Skeleton
+  State: changePwdError, changePwdSuccess
+  Component: ProfileForm -> avatar upload/preview/delete, username/email/AI config form, password change section
+  UI: ProfileSkeleton -> Skeleton (avatar + 4 grid fields + save button)
   UI: ErrorState -> WarningIcon
   Util: getErrorMessage()
 ```
@@ -190,6 +198,6 @@ ProfilePage -> useCurrentUser() -> userService.fetchCurrentUser() -> getCurrentU
 | types/paper.ts | PaperCard, PaperInfo, PaperList, usePapers, PaperCreatePage |
 | types/ai.ts | AISummaryPanel, usePaperAISummary, api/ai |
 | types/tag.ts | TagManager, PaperCard, PaperInfo, PaperCreatePage |
-| types/user.ts | ProfileForm, ProfilePage |
+| types/user.ts | ProfileForm, ProfilePage, useUser, api/users, api/auth (含 AI_PROVIDERS 常量) |
 | types/auth.ts | useAuth, api/auth |
-| types/prompt.ts | PromptsPage, usePrompts, api/prompts |
+| types/prompt.ts | PromptsPage, usePrompts, api/prompts, ProfileForm (默认 Prompt 选择器) |

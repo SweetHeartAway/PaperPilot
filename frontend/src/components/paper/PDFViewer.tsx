@@ -50,7 +50,11 @@ export default function PDFViewer({ data, loading, error, onRetry, fileName }: P
   useEffect(() => {
     // 清理旧文档
     if (status.type === "ready") {
-      status.doc.destroy();
+      try {
+        (status.doc as any).destroy();
+      } catch {
+        /* ignore */
+      }
     }
     setStatus({ type: "idle" });
     setCurrentPage(1);
@@ -65,7 +69,11 @@ export default function PDFViewer({ data, loading, error, onRetry, fileName }: P
       try {
         const doc = await getDocument({ data }).promise;
         if (cancelled) {
-          doc.destroy();
+          try {
+            (doc as any).destroy();
+          } catch {
+            /* ignore */
+          }
           return;
         }
         setStatus({ type: "ready", doc, numPages: doc.numPages });
@@ -108,7 +116,7 @@ export default function PDFViewer({ data, loading, error, onRetry, fileName }: P
 
         const ctx = canvas.getContext("2d")!;
         ctx.scale(dpr, dpr);
-        await page.render({ canvasContext: ctx, viewport }).promise;
+        await page.render({ canvas, canvasContext: ctx, viewport }).promise;
       } catch (err) {
         if (!cancelled) {
           console.error("PDF 页面渲染失败:", err);

@@ -9,7 +9,7 @@
 import logging
 from typing import TYPE_CHECKING, Any
 
-from app.repositories.vector import IndexItem, SearchResult, VectorRepository
+from app.repositories.vector import ChunkItem, SearchResult, VectorRepository
 
 if TYPE_CHECKING:
     from app.services.embedding_service import EmbeddingService
@@ -55,10 +55,13 @@ class ChromaVectorRepository(VectorRepository):
     通过 EmbeddingService（而非直接依赖 EmbeddingClient）获取向量，
     未来替换 Embedding 实现时本仓库代码无需改动。
 
+    索引以分块（chunk）为单位，每个 chunk 的 ID 格式为 "{paper_id}_{chunk_index}"。
+    metadata 中存储 paper_id、user_id、chunk_index 用于精确过滤和删除。
+
     Args:
         persist_dir: Chroma 数据目录
         collection_name: 集合名称
-        embedding_service: EmbeddingService 实例（为 None 时使用 Chroma 内置默认模型）
+        embedding_service: EmbeddingService 实例
     """
 
     def __init__(
@@ -92,31 +95,25 @@ class ChromaVectorRepository(VectorRepository):
     # ─── 内部辅助 ──────────────────────────────────────────────
 
     @staticmethod
-    def _metadata(meta: dict[str, Any] | None) -> dict[str, Any]:
-        return meta or {}
+    def _chunk_id(paper_id: int, chunk_index: int) -> str:
+        """生成 Chroma 文档 ID"""
+        return f"{paper_id}_{chunk_index}"
 
     # ─── 接口实现 ──────────────────────────────────────────────
 
-    def upsert(self, paper_id: int, text: str, metadata: dict[str, Any] | None = None) -> None:
-        self._collection.upsert(
-            ids=[str(paper_id)],
-            documents=[text],
-            metadatas=[self._metadata(metadata)],
-        )
-        logger.debug("Chroma upsert: paper_id=%d", paper_id)
-
-    def add_batch(self, items: list[IndexItem]) -> None:
+    def add_batch(self, items: list[ChunkItem]) -> None:
         if not items:
             return
-        self._collection.upsert(
-            ids=[str(item["paper_id"]) for item in items],
-            documents=[item["text"] for item in items],
-            metadatas=[self._metadata(item.get("metadata")) for item in items],
-        )
+        ids = [self._chunk_id(item["paper_id"], item["chunk_index"]) for item in items]
+        documents = [item["text"] for item in items]
+        metadatas = [item["metadata"] or {} for item in items]
+
+        self._collection.upsert(ids=ids, documents=documents, metadatas=metadatas)
         logger.info("Chroma batch upsert: count=%d", len(items))
 
     def delete(self, paper_id: int) -> None:
-        self._collection.delete(ids=[str(paper_id)])
+        """删除论文的所有分块（通过 metadata 中的 paper_id 过滤）"""
+        self._collection.delete(where={"paper_id": paper_id})
         logger.debug("Chroma delete: paper_id=%d", paper_id)
 
     def search(
@@ -139,16 +136,35 @@ class ChromaVectorRepository(VectorRepository):
             logger.error("Chroma search 失败: %s", e)
             raise RuntimeError(f"向量搜索失败: {e}") from e
 
-        # Chroma 返回: {ids: [[str]], distances: [[float]], ...}
+        # Chroma 返回: {ids: [[str]], distances: [[float]], documents: [[str]], metadatas: [[dict]]}
         ids = results.get("ids", [[]])[0]
         distances = results.get("distances", [[]])[0]
+        documents = results.get("documents", [[]])[0]
 
         if not ids:
             return []
 
-        return [
-            SearchResult(paper_id=int(pid), score=float(dist)) for pid, dist in zip(ids, distances)
-        ]
+        search_results: list[SearchResult] = []
+        for i, pid_full in enumerate(ids):
+            # pid_full 格式: "{paper_id}_{chunk_index}"
+            parts = pid_full.split("_")
+            paper_id = int(parts[0])
+            chunk_index = int(parts[1]) if len(parts) > 1 else 0
+            text = documents[i] if documents and i < len(documents) else ""
+            score = float(distances[i]) if distances and i < len(distances) else 0.0
+
+            search_results.append(
+                SearchResult(
+                    paper_id=paper_id,
+                    chunk_index=chunk_index,
+                    text=text,
+                    score=score,
+                )
+            )
+
+        # 按分数升序（Chroma 距离越小越相关）
+        search_results.sort(key=lambda r: r["score"])
+        return search_results
 
     def count(self) -> int:
         try:

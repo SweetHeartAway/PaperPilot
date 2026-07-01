@@ -121,4 +121,13 @@ def delete_paper(db: Session, paper_id: int, user_id: int):
 
     db.delete(db_paper)
     db.commit()
+
+    # 清理向量索引
+    try:
+        from app.services.indexing_service import remove_paper_index
+
+        remove_paper_index(paper_id)
+    except Exception as e:
+        logger.warning("向量索引清理失败（不影响删除）: paper_id=%s, error=%s", paper_id, e)
+
     return True

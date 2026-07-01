@@ -31,7 +31,7 @@ class AIPromptTemplate(Base):
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
-    user = relationship("User", back_populates="prompt_templates")
+    user = relationship("User", foreign_keys=[user_id], back_populates="prompt_templates")
     ai_analyses = relationship("AIAnalysis", back_populates="prompt_template")
 
     def __repr__(self) -> str:

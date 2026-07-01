@@ -8,10 +8,11 @@ from abc import ABC, abstractmethod
 from typing import Any, TypedDict
 
 
-class IndexItem(TypedDict):
-    """索引条目"""
+class ChunkItem(TypedDict):
+    """分块索引条目 — 用于 RAG 场景"""
 
     paper_id: int
+    chunk_index: int
     text: str
     metadata: dict[str, Any] | None
 
@@ -20,6 +21,8 @@ class SearchResult(TypedDict):
     """搜索结果"""
 
     paper_id: int
+    chunk_index: int
+    text: str
     score: float
 
 
@@ -30,21 +33,13 @@ class VectorRepository(ABC):
     """
 
     @abstractmethod
-    def upsert(self, paper_id: int, text: str, metadata: dict[str, Any] | None = None) -> None:
-        """索引或更新一篇论文
-
-        若 paper_id 已存在则更新，否则新增。
-        """
-        ...
-
-    @abstractmethod
-    def add_batch(self, items: list[IndexItem]) -> None:
-        """批量索引论文"""
+    def add_batch(self, items: list[ChunkItem]) -> None:
+        """批量索引论文分块"""
         ...
 
     @abstractmethod
     def delete(self, paper_id: int) -> None:
-        """删除一篇论文的向量索引"""
+        """删除一篇论文的所有向量索引"""
         ...
 
     @abstractmethod
@@ -62,7 +57,7 @@ class VectorRepository(ABC):
             filter: 元数据过滤条件（Chroma where 语法）
 
         Returns:
-            [{paper_id, score}, ...]，按相关性降级
+            [{paper_id, chunk_index, text, score}, ...]，按相关性降级
         """
         ...
 

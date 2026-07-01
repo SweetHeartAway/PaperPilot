@@ -73,6 +73,7 @@ class AIClient:
         temperature: float = 0.3,
         max_tokens: int | None = None,
         model: str | None = None,
+        messages: list[dict[str, str]] | None = None,
         **kwargs: Any,
     ) -> str:
         """调用聊天补全 API
@@ -83,6 +84,7 @@ class AIClient:
             temperature: 生成温度（默认 0.3，适合分析类任务）
             max_tokens: 最大输出 token，默认使用 settings.AI_MAX_TOKENS
             model: 模型名称，默认使用 settings.AI_MODEL
+            messages: 附加消息历史，每条 {role, content}
             **kwargs: 传递给 OpenAI API 的其他参数
 
         Returns:
@@ -94,13 +96,17 @@ class AIClient:
         if self._stub:
             return self._stub_chat(user_prompt)
 
+        full_messages: list[dict[str, str]] = [
+            {"role": "system", "content": system_prompt},
+        ]
+        if messages:
+            full_messages.extend(messages)
+        full_messages.append({"role": "user", "content": user_prompt})
+
         try:
             response = self._client.chat.completions.create(  # type: ignore[union-attr]
                 model=model or settings.AI_MODEL,
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ],
+                messages=full_messages,
                 temperature=temperature,
                 max_tokens=max_tokens or settings.AI_MAX_TOKENS,
                 **kwargs,
