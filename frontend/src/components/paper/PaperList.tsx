@@ -1,3 +1,4 @@
+import { memo } from "react";
 import PaperCard from "./PaperCard";
 import type { Paper } from "../../types/paper";
 
@@ -5,7 +6,7 @@ export interface PaperListProps {
   papers: Paper[];
 }
 
-export default function PaperList({ papers }: PaperListProps) {
+function PaperListInner({ papers }: PaperListProps) {
   return (
     <div className="space-y-3">
       {papers.map((paper) => (
@@ -14,3 +15,5 @@ export default function PaperList({ papers }: PaperListProps) {
     </div>
   );
 }
+
+export default memo(PaperListInner);

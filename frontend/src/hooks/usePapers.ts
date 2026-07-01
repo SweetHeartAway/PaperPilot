@@ -2,12 +2,17 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getPaperList, type PaperListQuery } from "../services/paperService";
 import { fetchPaper } from "../api/papers";
 import { fetchPaperAISummary, triggerPaperAISummary } from "../api/ai";
+import { queryKeys } from "../utils/queryKeys";
 import type { Paper } from "../types/paper";
 import type { AIAnalysisStatus } from "../types/ai";
 
 export function usePaperList(query: PaperListQuery) {
   return useQuery({
-    queryKey: ["papers", "list", query.page, query.pageSize, query.search ?? ""],
+    queryKey: queryKeys.papers.list({
+      page: query.page,
+      pageSize: query.pageSize,
+      search: query.search,
+    }),
     queryFn: () => getPaperList(query),
     placeholderData: (previousData) => previousData,
   });
@@ -15,7 +20,7 @@ export function usePaperList(query: PaperListQuery) {
 
 export function usePaper(id: number) {
   return useQuery<Paper>({
-    queryKey: ["paper", id],
+    queryKey: queryKeys.papers.detail(id),
     queryFn: () => fetchPaper(id),
     enabled: id > 0,
   });
@@ -25,12 +30,12 @@ export function usePaper(id: number) {
 
 export function usePaperAISummary(paperId: number, analysisType?: string) {
   return useQuery<AIAnalysisStatus | null>({
-    queryKey: ["paper", paperId, "ai-summary", analysisType ?? "summary"],
+    queryKey: queryKeys.papers.aiSummary(paperId, analysisType ?? "summary"),
     queryFn: () => fetchPaperAISummary(paperId, analysisType),
     enabled: paperId > 0,
     refetchInterval: (query) => {
       const data = query.state.data;
-      return data && (data.status === "pending" || data.status === "processing") ? 2000 : false;
+      return data && (data.status === "pending" || data.status === "processing") ? 5000 : false;
     },
   });
 }
@@ -40,7 +45,9 @@ export function useTriggerAIAnalysis(paperId: number, analysisType?: string) {
   return useMutation({
     mutationFn: () => triggerPaperAISummary(paperId, { analysisType }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["paper", paperId, "ai-summary"] });
+      queryClient.invalidateQueries({
+        queryKey: queryKeys.papers.aiSummary(paperId, analysisType ?? "summary"),
+      });
     },
   });
 }

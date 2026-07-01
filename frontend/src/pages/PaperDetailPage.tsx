@@ -5,43 +5,20 @@ import { useAddPaperTag, useRemovePaperTag } from "../hooks/useTags";
 import { getPaperDownloadUrl } from "../api/papers";
 import Content from "../layout/Content";
 import PaperInfo from "../components/paper/PaperInfo";
+import PaperDetailSkeleton from "../components/paper/PaperDetailSkeleton";
 import AISummaryPanel from "../components/paper/AISummaryPanel";
 import TagManager from "../components/paper/TagManager";
 import type { Tab } from "../components/ui/TabBar";
 import ErrorState from "../components/ui/ErrorState";
-import Skeleton from "../components/ui/Skeleton";
 import EmptyState from "../components/ui/EmptyState";
+import { getErrorMessage } from "../utils/error";
 
-function PaperDetailSkeleton() {
-  return (
-    <div role="status" aria-label="加载中">
-      <Skeleton className="mb-6 h-4 w-32" />
-      <div className="flex flex-col gap-6 lg:flex-row">
-        <div className="flex-1 space-y-4">
-          <Skeleton className="h-7 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
-          <div className="flex gap-4">
-            <Skeleton className="h-3 w-24" />
-            <Skeleton className="h-3 w-36" />
-          </div>
-          <div>
-            <Skeleton className="mb-2 h-5 w-16" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="mt-1 h-4 w-5/6" />
-          </div>
-        </div>
-        <div className="w-full lg:w-96">
-          <div className="rounded-lg border border-gray-200 p-5">
-            <Skeleton className="mb-4 h-6 w-24" />
-            <Skeleton className="mb-2 h-4 w-full" />
-            <Skeleton className="mb-2 h-4 w-5/6" />
-            <Skeleton className="h-4 w-2/3" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+const AI_TABS: Tab[] = [
+  { key: "summary", label: "摘要" },
+  { key: "method", label: "Method" },
+  { key: "result", label: "Result" },
+  { key: "conclusion", label: "Conclusion" },
+];
 
 export default function PaperDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -55,12 +32,6 @@ export default function PaperDetailPage() {
   const removeTagMutation = useRemovePaperTag(paperId);
 
   // ─── AI Summary ───
-  const AI_TABS: Tab[] = [
-    { key: "summary", label: "摘要" },
-    { key: "method", label: "Method" },
-    { key: "result", label: "Result" },
-    { key: "conclusion", label: "Conclusion" },
-  ];
   const [activeTab, setActiveTab] = useState("summary");
   const {
     data: analysis,
@@ -104,7 +75,7 @@ export default function PaperDetailPage() {
       ) : isError ? (
         <ErrorState
           title="加载论文失败"
-          message={error instanceof Error ? error.message : "请检查网络连接后重试"}
+          message={getErrorMessage(error, "请检查网络连接后重试")}
           onRetry={() => refetch()}
         />
       ) : !paper ? (
@@ -118,10 +89,6 @@ export default function PaperDetailPage() {
             <div className="flex-1">
               <PaperInfo
                 paper={paper}
-                isLoading={isLoading}
-                isError={isError}
-                error={error}
-                onRetry={() => refetch()}
                 downloadUrl={paper.file_uuid ? getPaperDownloadUrl(paper.id) : undefined}
               />
             </div>
@@ -130,7 +97,7 @@ export default function PaperDetailPage() {
                 analysis={analysis}
                 isLoading={aiLoading}
                 isError={aiError}
-                errorMessage={aiErrorObj instanceof Error ? aiErrorObj.message : undefined}
+                errorMessage={getErrorMessage(aiErrorObj, "AI 分析加载失败")}
                 onRetry={() => aiRefetch()}
                 onTriggerAnalysis={() => triggerMutation.mutate()}
                 triggerPending={triggerMutation.isPending}

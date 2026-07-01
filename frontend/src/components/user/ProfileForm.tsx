@@ -11,8 +11,14 @@ export default function ProfileForm({ user }: ProfileFormProps) {
     <div className="space-y-6">
       {/* Username */}
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">用户名</label>
+        <label
+          htmlFor="profile-username"
+          className="mb-1.5 block text-sm font-medium text-gray-700"
+        >
+          用户名
+        </label>
         <input
+          id="profile-username"
           type="text"
           value={user.username}
           readOnly
@@ -22,8 +28,11 @@ export default function ProfileForm({ user }: ProfileFormProps) {
 
       {/* Email */}
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">邮箱</label>
+        <label htmlFor="profile-email" className="mb-1.5 block text-sm font-medium text-gray-700">
+          邮箱
+        </label>
         <input
+          id="profile-email"
           type="email"
           value={user.email}
           readOnly
@@ -33,8 +42,11 @@ export default function ProfileForm({ user }: ProfileFormProps) {
 
       {/* Registration date */}
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">注册时间</label>
+        <label htmlFor="profile-regdate" className="mb-1.5 block text-sm font-medium text-gray-700">
+          注册时间
+        </label>
         <input
+          id="profile-regdate"
           type="text"
           value={new Date(user.created_at).toLocaleDateString("zh-CN", {
             year: "numeric",
@@ -48,8 +60,13 @@ export default function ProfileForm({ user }: ProfileFormProps) {
 
       {/* Account status */}
       <div>
-        <label className="mb-1.5 block text-sm font-medium text-gray-700">账户状态</label>
-        <div className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm">
+        <label htmlFor="profile-status" className="mb-1.5 block text-sm font-medium text-gray-700">
+          账户状态
+        </label>
+        <div
+          id="profile-status"
+          className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 text-sm"
+        >
           <span
             className={`inline-block h-2 w-2 rounded-full ${user.is_active ? "bg-green-500" : "bg-red-500"}`}
           />

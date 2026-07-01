@@ -83,6 +83,11 @@ npm run build                        # 构建
 npm run lint                         # oxlint 检查
 npm run format                       # prettier 格式化
 npx tsc --noEmit                     # TypeScript 类型检查（无输出=通过）
+npx vitest run                       # 运行全部测试
+npx vitest                           # 监听模式
+npx vitest run --coverage            # 带覆盖率
+npx playwright test                  # E2E 测试（需先启动 dev 和 backend）
+npx playwright test --ui             # E2E UI 模式
 
 ```
 
@@ -161,6 +166,14 @@ api/ (HTTP only) → services/ (transform) → hooks/ (React Query) → pages/ (
 - 客户端状态（auth token、toast）→ Zustand store
 - 不要在 Zustand 中缓存 API 返回数据
 
+### 前端测试 (Vitest)
+- 测试文件放在源文件旁：`<name>.test.ts` 或 `<name>.test.tsx`
+- 纯函数：直接测输入输出，零 DOM 依赖
+- Zustand Store：用 `getState()` 直接调用，不渲染组件
+- UI 组件：用 `@testing-library/react` 的 `render()` + `screen.getByText` 查询
+- 使用 `className.toContain()` 断言 Tailwind 类名，不依赖 CSS 实际生效
+- 避免 mock 外部依赖，优先测试纯 UI 基件
+
 ### Commit 规范
 ```
 <type>: <简短中文或英文描述>
@@ -229,11 +242,14 @@ api/ (HTTP only) → services/ (transform) → hooks/ (React Query) → pages/ (
 
 | **工程完善** | |
 |------|------|
-| Frontend Vitest | ⏳ 待补充 |
-| 全局异常处理 | ⏳ 待补充 |
-| Error Boundary | ⏳ 待补充 |
-| Loading 状态统一 | ⏳ 待补充 |
-| E2E 测试 | ⏳ 待补充 |
+| Frontend Vitest | ✅ (48 tests, 7 files) |
+| Error Boundary | ✅ |
+| Loading 状态统一 | ✅ |
+| 全局异常处理（ErrorPage / getErrorMessage） | ✅ |
+| React Query 缓存策略优化 | ✅ queryKeys 工厂、缓存隔离、enabled 守卫 |
+| 页面性能优化 | ✅ React.memo + lazy 代码分割（主 chunk -25%） |
+| UI 细节优化 | ✅ SVG 图标抽取、按钮统一、无障碍 aria-label |
+| E2E 测试 | ✅ Playwright + 3 个测试文件（auth/navigation/paper） |
 
 ## 需要按需阅读的文档
 
@@ -247,26 +263,26 @@ api/ (HTTP only) → services/ (transform) → hooks/ (React Query) → pages/ (
 
 > 以下内容属于工程质量完善，不属于新增业务功能。
 ### 第一优先级
-- [ ] 前端组件测试（Vitest）
-- [ ] Error Boundary
-- [ ] 全局异常页面（404 / 500）
-- [ ] Loading 统一处理
+- [x] 前端组件测试（Vitest）
+- [x] Error Boundary
+- [x] 全局异常页面（404 / 500）
+- [x] Loading 统一处理
 
 ---
 
 ### 第二优先级
-- [ ] API 错误处理统一
-- [ ] React Query 缓存策略优化
-- [ ] 页面性能优化
-- [ ] UI 细节优化
+- [x] API 错误处理统一 — getErrorMessage 统一 7 处重复逻辑
+- [x] React Query 缓存策略优化 — queryKeys 工厂、缓存隔离、enabled 守卫
+- [x] 页面性能优化 — React.memo + lazy 代码分割（主 chunk -25%）
+- [x] UI 细节优化 — SVG 图标抽取、按钮统一、无障碍 aria-label
 
 ---
 
 ### 第三优先级
-- [ ] E2E 自动化测试
-- [ ] 架构文档补充
-- [ ] 数据库 ER 图
-- [ ] 组件关系图
+- [x] E2E 自动化测试 — Playwright 框架 + 3 个测试文件（auth, navigation, paper）
+- [x] 架构文档补充 — ErrorBoundary / 代码分割 / 缓存策略 / queryKeys 已补全
+- [x] 数据库 ER 图 — docs/design/ER_DIAGRAM.md（Mermaid ER 图 + 字段说明）
+- [x] 组件关系图 — docs/design/COMPONENT_MAP.md（页面/Hooks/API 完整调用链）
 
 ---
 

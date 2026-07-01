@@ -1,6 +1,5 @@
 import { useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQueryClient } from "@tanstack/react-query";
 import FileUploadArea from "../components/ui/FileUploadArea";
 import UploadProgress from "../components/ui/UploadProgress";
 import { useCreatePaper } from "../hooks/useCreatePaper";
@@ -11,7 +10,6 @@ type PageStatus = "form" | "creating" | "uploading" | "error";
 
 export default function PaperCreatePage() {
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const toast = useToast();
   const createPaperMutation = useCreatePaper();
 
@@ -92,7 +90,6 @@ export default function PaperCreatePage() {
       await uploadPaperFile(paperId, file, (pct: number) => setProgress(pct));
 
       // Success
-      queryClient.invalidateQueries({ queryKey: ["papers"] });
       toast.success("论文上传成功");
       paperIdRef.current = null; // 清理缓存
       navigate("/papers");
@@ -102,7 +99,7 @@ export default function PaperCreatePage() {
       loadingToastRef.current = null;
       toast.error(err instanceof Error ? err.message : "上传失败，请重试");
     }
-  }, [title, authors, abstract, doi, file, navigate, queryClient, toast, createPaperMutation]);
+  }, [title, authors, abstract, doi, file, navigate, toast, createPaperMutation]);
 
   const handleRetry = useCallback(() => {
     setStatus("form");

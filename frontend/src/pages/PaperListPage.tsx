@@ -7,6 +7,8 @@ import PaperCardSkeleton from "../components/paper/PaperCardSkeleton";
 import EmptyState from "../components/ui/EmptyState";
 import ErrorState from "../components/ui/ErrorState";
 import Pagination from "../components/ui/Pagination";
+import { XIcon } from "../components/ui/Icons";
+import { getErrorMessage } from "../utils/error";
 
 const PAGE_SIZE = 20;
 
@@ -49,15 +51,7 @@ export default function PaperListPage() {
               className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 transition-colors hover:text-gray-600"
               aria-label="清除搜索"
             >
-              <svg
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <XIcon className="h-4 w-4" />
             </button>
           )}
         </div>
@@ -84,7 +78,7 @@ export default function PaperListPage() {
       ) : isError ? (
         <ErrorState
           title="加载论文列表失败"
-          message={error instanceof Error ? error.message : "请检查网络连接后重试"}
+          message={getErrorMessage(error, "请检查网络连接后重试")}
           onRetry={() => refetch()}
         />
       ) : data && data.papers.length === 0 ? (

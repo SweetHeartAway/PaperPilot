@@ -1,4 +1,4 @@
-import { type ReactNode, useCallback } from "react";
+import { memo, type ReactNode, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatDate } from "../../utils/format";
 
@@ -33,7 +33,7 @@ export interface PaperCardProps<T extends PaperCardData = PaperCardData> {
 
 // ─── 组件 ───
 
-export default function PaperCard<T extends PaperCardData = PaperCardData>({
+function PaperCardInner<T extends PaperCardData = PaperCardData>({
   paper,
   topRight,
   footer,
@@ -115,3 +115,6 @@ export default function PaperCard<T extends PaperCardData = PaperCardData>({
     </div>
   );
 }
+
+const PaperCard = memo(PaperCardInner) as typeof PaperCardInner;
+export default PaperCard;

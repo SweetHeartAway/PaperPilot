@@ -48,6 +48,7 @@ PaperPilot 采用经典前后端分离架构，数据流严格单向：
 | CSS | Tailwind CSS | 4 |
 | 服务端状态 | @tanstack/react-query | 5 |
 | 客户端状态 | Zustand | 5 |
+| 测试框架 | Vitest + @testing-library/react | ^3 / ^16 |
 | HTTP | axios | 1 |
 | 路由 | react-router-dom | 7 |
 
@@ -95,10 +96,10 @@ frontend/src/
 │   ├── ai.ts
 │   └── tags.ts
 ├── components/
-│   ├── ui/           # 8 个纯 UI 基件（EmptyState, ErrorState, Pagination, Skeleton, TabBar, UploadProgress, FileUploadArea, ToastContainer）
+│   ├── ui/           # 9 个纯 UI 基件（EmptyState, ErrorState, Pagination, Skeleton, Spinner, TabBar, UploadProgress, FileUploadArea, ToastContainer）
 │   ├── paper/        # 6 个论文领域组件（PaperCard, PaperList, PaperCardSkeleton, PaperInfo, AISummaryPanel, TagManager）
 │   ├── auth/         # 1 个认证组件（ProtectedRoute）
-│   └── user/         # 1 个用户组件（ProfileForm）
+│   └── user/         # 2 个用户组件（ProfileForm, ProfileSkeleton）
 ├── hooks/            # React Query 封装
 │   ├── usePapers.ts
 │   ├── useTags.ts
@@ -109,7 +110,7 @@ frontend/src/
 │   ├── Header.tsx / Sidebar.tsx / Content.tsx / Footer.tsx
 │   ├── MainLayout.tsx / AuthLayout.tsx
 │   └── index.ts
-├── pages/            # 7 个页面（PaperList, PaperCreate, PaperDetail, Login, Register, Tags, Profile）
+├── pages/            # 9 个页面（PaperList, PaperCreate, PaperDetail, Login, Register, Tags, Profile, ErrorPage, NotFoundPage）
 ├── services/         # 数据转换层
 │   ├── paperService.ts
 │   ├── tagService.ts
@@ -174,6 +175,8 @@ Guard: OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 
 ### 2.5 错误处理模式
 
+#### 后端
+
 所有路由遵循统一模式：服务层抛 `ValueError`，路由层 catch 并映射 HTTP 状态码：
 
 ```python
@@ -183,6 +186,13 @@ except ValueError as e:
     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 ```
 
+#### 前端
+
+- **全局错误捕获**：`App.tsx` 使用 `<ErrorBoundary FallbackComponent={ErrorPage}>` 包裹 `<Routes>`，未捕获的渲染异常展示通用错误页面
+- **404 路由**：路由末尾添加 `<Route path="*" element={<NotFoundPage />} />`，处理未知路径
+- **API 错误统一处理**：使用 `getErrorMessage(err, fallback)` 工具函数，将 7 处重复的 `error instanceof Error` 逻辑统一为单点维护
+- **Mutation onError**：`useAddPaperTag` / `useRemovePaperTag` 等 mutation 通过 `onError` 回调触发 toast 通知
+
 ---
 
 ## 3. Frontend
@@ -191,20 +201,23 @@ except ValueError as e:
 
 ```
 <App>
-  <Routes>
-    <Route path="/login"     element={<LoginPage />} />           ← 公开
-    <Route path="/register"  element={<RegisterPage />} />        ← 公开
-    <Route element={<ProtectedRoute />}>                          ← 检查 authStore
-      <Route path="/" element={<MainLayout>}>
-        <Route index         → Navigate /papers />
-        <Route path="papers"           element={<PaperListPage />} />
-        <Route path="papers/create"    element={<PaperCreatePage />} />
-        <Route path="papers/:id"       element={<PaperDetailPage />} />
-        <Route path="tags"             element={<TagsPage />} />
-        <Route path="profile"          element={<ProfilePage />} />
+  <ErrorBoundary FallbackComponent={ErrorPage}>                     ← 全局错误捕获
+    <Routes>
+      <Route path="/login"     element={<LoginPage />} />           ← 公开
+      <Route path="/register"  element={<RegisterPage />} />        ← 公开
+      <Route element={<ProtectedRoute />}>                          ← 检查 authStore
+        <Route path="/" element={<MainLayout>}>
+          <Route index         → Navigate /papers />
+          <Route path="papers"           element={<PaperListPage />} />
+          <Route path="papers/create"    element={<PaperCreatePage />} />
+          <Route path="papers/:id"       element={<PaperDetailPage />} />
+          <Route path="tags"             element={<TagsPage />} />
+          <Route path="profile"          element={<ProfilePage />} />
+        </Route>
       </Route>
-    </Route>
-  </Routes>
+      <Route path="*" element={<NotFoundPage />} />                ← 404
+    </Routes>
+  </ErrorBoundary>
   <ToastContainer />      ← 全局，在路由之上
 </App>
 ```
@@ -230,11 +243,11 @@ PaperListPage
 
 | 分类 | 数量 | 特点 |
 |------|------|------|
-| UI 基件 | 8 | 纯 props 驱动，零业务逻辑，可跨项目复用 |
+| UI 基件 | 9 | 纯 props 驱动，零业务逻辑，可跨项目复用 |
 | 领域组件 | 6 | 通过 props 注入回调，不直接 import hooks |
 | Layout | 6 | 纯 props 驱动，零业务逻辑 |
 | 认证组件 | 1 | ProtectedRoute（路由守卫） |
-| 页面 | 7 | 编排层：调用 hooks → 传入组件 |
+| 页面 | 9 | 编排层：调用 hooks → 传入组件 |
 
 ### 3.4 状态管理双层架构
 
@@ -263,36 +276,40 @@ toastStore: toasts[], add(), remove(), clear()
 
 ```typescript
 // 列表（分页+搜索）
-["papers", "list", page, pageSize, search]
+["papers", "list", params]
 
 // 详情
-["paper", paperId]
+["papers", "detail", id]
 
 // AI 分析（带类型）
-["paper", paperId, "ai-summary", analysisType]
+["papers", "ai-summary", paperId, analysisType]
 
 // 标签
 ["tags"]
+
+// 当前用户
+["user", "me"]
 ```
 
 ### 4.2 关键模式
 
 | 模式 | 位置 | 说明 |
 |------|------|------|
-| **轮询替代 WebSocket** | `usePaperAISummary` | `refetchInterval` 每 2s 当 status=pending/processing，完成后停止 |
+| **轮询替代 WebSocket** | `usePaperAISummary` | `refetchInterval` 每 5s 当 status=pending/processing，完成后停止 |
 | **占位数据** | `usePaperList` | `placeholderData: (prev) => prev` 保持翻页平滑 |
 | **enabled 守卫** | `usePaper(id)` | `enabled: id > 0` 防止无效请求 |
+| **enabled 守卫** | `useCurrentUser` | `enabled: !!token` 仅登录后请求用户信息 |
 | **onSuccess 失效** | mutations | 成功后 `invalidateQueries` 对应查询键 |
 
 ### 4.3 缓存失效策略
 
 ```
-论文创建 → ["papers"]（列表）
-标签变更 → ["paper", paperId]（详情） 
-AI 触发 → ["paper", paperId, "ai-summary"]（AI 分析）
+论文创建 → queryKeys.papers.lists()（列表）
+标签变更 → queryKeys.papers.detail(paperId)（仅详情，不波及 AI 摘要）
+AI 触发 → queryKeys.papers.aiSummary(paperId, type)（AI 分析）
 ```
 
-没有自定义 `staleTime` 或 `gcTime` — 使用 React Query 默认值（staleTime: 0, gcTime: 5 分钟）。
+QueryClient 全局配置：staleTime=30s, retry=1, refetchOnWindowFocus=false。
 
 ---
 
@@ -348,9 +365,53 @@ export async function getPaperList(query: PaperListQuery) {
 
 ---
 
-## 6. AI 模块分析
+## 6. 测试覆盖
 
-### 6.1 客户端抽象
+### 6.1 后端测试
+
+- 测试框架：pytest + FastAPI TestClient
+- 测试文件：4 个（`test_auth.py`, `test_papers.py`, `test_tags.py`, `test_users.py`）
+- 测试数量：59 个
+- 策略：每个测试函数独立数据库（`scope="function"` + `create_all/drop_all`），覆盖正常路径 + 边界条件
+
+### 6.2 前端测试
+
+- 测试框架：Vitest + @testing-library/react + jsdom
+- 配置文件：`vitest.config.ts`，使用 jsdom 环境
+- 全局设置：`src/test/setup.ts`，扩展 `@testing-library/jest-dom` matchers
+- 测试文件：7 个，共 48 个测试
+
+| 测试文件 | 类型 | 说明 |
+|---------|------|------|
+| `utils/format.test.ts` | 纯函数 | 日期/数字格式化，零 DOM 依赖 |
+| `utils/token.test.ts` | 纯函数 | Token 编解码，零 DOM 依赖 |
+| `stores/toastStore.test.ts` | Store | 直接调用 `getState()`，不渲染组件 |
+| `components/ui/EmptyState.test.tsx` | UI 组件 | `render()` + `screen.getByText` 查询 |
+| `components/ui/ErrorState.test.tsx` | UI 组件 | `render()` + `screen.getByText` 查询 |
+| `components/ui/Spinner.test.tsx` | UI 组件 | `render()` + `screen.getByText` 查询 |
+| `components/ui/Pagination.test.tsx` | UI 组件 | `render()` + `screen.getByText` 查询 |
+
+#### 测试策略
+
+- 纯函数：直接测输入输出，零 DOM 依赖
+- Zustand Store：用 `getState()` 直接调用，不渲染组件
+- UI 组件：用 `@testing-library/react` 的 `render()` + `screen.getByText` 查询
+- 使用 `className.toContain()` 断言 Tailwind 类名，不依赖 CSS 实际生效
+- 避免 mock 外部依赖，优先测试纯 UI 基件
+
+---
+
+### 6.3 代码分割与性能优化
+
+- **React.lazy 代码分割**：6 个非首屏页面（PaperDetailPage、PaperCreatePage、TagsPage、ProfilePage、ErrorPage、NotFoundPage）使用 `React.lazy()` 动态加载，主 chunk 从 373KB 降至 281KB（-25%）
+- **React.memo**：PaperCard 和 PaperList 包裹 `memo()`，避免不必要的重渲染
+- **模块级常量**：AI_TABS 提取为 `PaperDetailPage.tsx` 的模块级常量，避免每次渲染重新创建数组
+
+---
+
+## 7. AI 模块分析
+
+### 7.1 客户端抽象
 
 `app/utils/ai_client.py`:
 
@@ -358,7 +419,7 @@ export async function getPaperList(query: PaperListQuery) {
 - 无 API Key 自动降级为 stub（截断前 200 字符）
 - 单例模式：`ai_client = AIClient()`
 
-### 6.2 AI 分析完整流程（`ai_summary_service.trigger_ai_summary`）
+### 7.2 AI 分析完整流程（`ai_summary_service.trigger_ai_summary`）
 
 ```
 1. 验证论文存在且属于当前用户
@@ -374,7 +435,7 @@ export async function getPaperList(query: PaperListQuery) {
 11. 失败 → status: "failed" + error_message
 ```
 
-### 6.3 两个并行的 AI 系统
+### 7.3 两个并行的 AI 系统
 
 | | 旧版 (`/api/v1/ai/`) | 新版 (`/api/v1/papers/{id}/ai-summary`) |
 |--|----------------------|----------------------------------------|
@@ -386,7 +447,7 @@ export async function getPaperList(query: PaperListQuery) {
 | 自定义 Prompt | ❌ | ✅ |
 | 状态 | 遗留（硬编码占位符） | 当前使用 |
 
-### 6.4 Embedding + 向量存储
+### 7.4 Embedding + 向量存储
 
 ```
 embedding_client.py (utils)
@@ -409,9 +470,9 @@ vector_chroma.py (repositories)
 
 ---
 
-## 7. 代码重复
+## 8. 代码重复
 
-### 7.1 前后端两份 AI 分析系统 🔴
+### 8.1 前后端两份 AI 分析系统 🔴
 
 旧版 `ai_service.py` + `ai.py` 路由与新版 `ai_summary_service.py` + papers 路由中的 AI 端点并存。两者都用同一个 `ai_client`，但旧版不持久化、不缓存、不管理版本。
 
@@ -419,7 +480,7 @@ vector_chroma.py (repositories)
 - `_SUMMARY_SYSTEM_PROMPT` 在 `ai_service.py` 中定义
 - `ai_summary_service.py` 在代码中嵌入类似的提示词
 
-### 7.2 Stub 截断逻辑重复 🔴 (已修复 ✅)
+### 8.2 Stub 截断逻辑重复 🔴 (已修复 ✅)
 
 | 位置 | 代码 |
 |------|------|
@@ -428,32 +489,32 @@ vector_chroma.py (repositories)
 
 旧版 `ai_service.py` 中的独立 stub 实现已移除，统一由 `ai_client` 处理。
 
-### 7.3 DOI 唯一性校验重复 🟡 (已修复 ✅)
+### 8.3 DOI 唯一性校验重复 🟡 (已修复 ✅)
 
 - `paper_service.py:21-23` — `create_paper()` 中检查
 - `paper_service.py:82-86` — `update_paper()` 中检查
 - 已提取为 `_validate_doi_unique()` 辅助函数
 
-### 7.4 前端错误状态 HTML 重复 🟡 (已修复 ✅)
+### 8.4 前端错误状态 HTML 重复 🟡 (已修复 ✅)
 
 类似的错误状态结构（SVG + 错误文本 + 重试按钮）在 `PaperListPage.tsx`、`PaperDetailPage.tsx`、`PaperInfo.tsx` 和 `AISummaryPanel.tsx` 中重复出现。已提取为 `<ErrorState>` 组件。
 
-### 7.5 前端内联 SVG 图标 🟢
+### 8.5 前端内联 SVG 图标 (已修复 ✅)
 
-约 30 个内联 SVG 图标散落在 .tsx 文件中。关闭图标（X 形状）在 `FileUploadArea.tsx`、`PaperListPage.tsx`、`TagManager.tsx`、`ToastContainer.tsx` 中被复制。没有使用图标库。
+约 18 个内联 SVG 图标散落在 .tsx 文件中。关闭图标（X 形状）和警告三角图标已抽取为 `components/ui/Icons.tsx`（XIcon、XCircleIcon、WarningIcon、UploadArrowIcon 4 个共享组件）。
 
 ---
 
-## 8. 重构建议
+## 9. 重构建议
 
-### 8.1 高优先级（✅ 已完成）
+### 9.1 高优先级（✅ 已完成）
 
 | # | 建议 | 状态 |
 |---|------|------|
 | 1 | **弃用旧版 AI 路由** `(/api/v1/ai/)` — 标记为 deprecated + 共享 Prompt 常量移至 `app/core/prompts.py` | ✅ 已实现 |
 | 2 | **移除冗余 stub 逻辑** — `ai_service.py` 不再重复 `ai_client` 的 stub 实现 | ✅ 已实现 |
 
-### 8.2 中等优先级（✅ 已完成）
+### 9.2 中等优先级（✅ 已完成）
 
 | # | 建议 | 状态 |
 |---|------|------|
@@ -463,14 +524,14 @@ vector_chroma.py (repositories)
 | 6 | **抽取 `file_service.py`** — 文件操作从 `paper_service.py` 独立 | ✅ 已实现 |
 | 7 | **分离 `usePapers.ts` 标签 hooks** — 移至独立 `useTags.ts` | ✅ 已实现 |
 
-### 8.3 低优先级（待处理）
+### 9.3 低优先级（待处理）
 
-| # | 建议 | 说明 |
-|---|------|------|
-| 8 | **引入图标库** | lucide-react 或集中 `<Icon>` 组件替代 30 个内联 SVG |
-| 9 | **前端密码校验对齐** | 前端校验 `>=6` 位，后端要求 `min_length=8`，两端不一致 |
-| 10 | **后端单例 → 依赖注入** | `ai_client`、`embedding_client` 等全局单例不利于单元测试 mock，可改为构造注入 |
-| 11 | **登录页统一使用 `useAuthStore`** | 登录页与 `useAuth` hook 的使用不一致，可统一 |
+| # | 建议 | 说明 | 状态 |
+|---|------|------|------|
+| 8 | **引入图标库** | lucide-react 或集中 `<Icon>` 组件替代 18 个内联 SVG | ✅ 已抽取共享 Icons.tsx（4 个组件） |
+| 9 | **前端密码校验对齐** | 前端校验 `>=6` 位，后端要求 `min_length=8`，两端不一致 | ⏳ |
+| 10 | **后端单例 → 依赖注入** | `ai_client`、`embedding_client` 等全局单例不利于单元测试 mock，可改为构造注入 | ⏳ |
+| 11 | **登录页统一使用 `useAuthStore`** | 登录页与 `useAuth` hook 的使用不一致，可统一 | ⏳ |
 
 ---
 
@@ -530,5 +591,13 @@ PageStatus: "form" → "creating" → "uploading" → "success" → navigate /pa
 ### C. 测试覆盖
 
 - 后端：59 个测试，4 个测试文件（auth, papers, tags, users）
-- 前端：无测试
+- 前端：48 个测试，7 个测试文件（format, token, toastStore, EmptyState, ErrorState, Spinner, Pagination）
 - 后端测试框架：pytest + FastAPI TestClient + 独立数据库 per function
+- 前端测试框架：Vitest + @testing-library/react + jsdom
+
+### D. 相关文档
+
+| 文档 | 路径 | 说明 |
+|------|------|------|
+| 数据库 ER 图 | [ER_DIAGRAM.md](ER_DIAGRAM.md) | 完整 ER 图（Mermaid）、6 模型字段说明、级联关系 |
+| 组件关系图 | [COMPONENT_MAP.md](COMPONENT_MAP.md) | 路由树、页面/Hooks/API 调用链、基件依赖图 |

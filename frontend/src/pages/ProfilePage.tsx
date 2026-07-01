@@ -1,22 +1,9 @@
 import { useCurrentUser } from "../hooks/useUser";
 import Content from "../layout/Content";
 import ProfileForm from "../components/user/ProfileForm";
-import Skeleton from "../components/ui/Skeleton";
+import ProfileSkeleton from "../components/user/ProfileSkeleton";
 import ErrorState from "../components/ui/ErrorState";
-
-function ProfileSkeleton() {
-  return (
-    <div className="space-y-6" role="status" aria-label="加载中">
-      <Skeleton className="h-5 w-24" />
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i}>
-          <Skeleton className="mb-1.5 h-4 w-16" />
-          <Skeleton className="h-10 w-full rounded-lg" />
-        </div>
-      ))}
-    </div>
-  );
-}
+import { getErrorMessage } from "../utils/error";
 
 export default function ProfilePage() {
   const { data: user, isLoading, isError, error, refetch } = useCurrentUser();
@@ -26,7 +13,7 @@ export default function ProfilePage() {
       <h1 className="mb-6 text-xl font-semibold text-gray-900">个人中心</h1>
 
       {/* Loading state */}
-      {isLoading && !user ? (
+      {isLoading ? (
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <ProfileSkeleton />
         </div>
@@ -34,7 +21,7 @@ export default function ProfilePage() {
       isError ? (
         <ErrorState
           title="加载用户信息失败"
-          message={error instanceof Error ? error.message : "请检查网络连接后重试"}
+          message={getErrorMessage(error, "请检查网络连接后重试")}
           onRetry={() => refetch()}
         />
       ) : /* User info card */

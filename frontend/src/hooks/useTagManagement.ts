@@ -1,11 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { fetchTags, updateTag, deleteTag } from "../services/tagService";
-
-const TAGS_QUERY_KEY = ["tags"];
+import { queryKeys } from "../utils/queryKeys";
 
 export function useAllTags() {
   return useQuery({
-    queryKey: TAGS_QUERY_KEY,
+    queryKey: queryKeys.tags.all,
     queryFn: fetchTags,
   });
 }
@@ -15,7 +14,7 @@ export function useUpdateTag() {
   return useMutation({
     mutationFn: ({ id, name }: { id: number; name: string }) => updateTag(id, { name }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TAGS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tags.all });
     },
   });
 }
@@ -25,7 +24,7 @@ export function useDeleteTag() {
   return useMutation({
     mutationFn: (id: number) => deleteTag(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: TAGS_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tags.all });
     },
   });
 }

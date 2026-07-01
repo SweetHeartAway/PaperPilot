@@ -1,5 +1,6 @@
 import { type ReactNode, useCallback, useRef, useState } from "react";
 import { formatFileSize } from "../../utils/format";
+import { UploadArrowIcon, XCircleIcon } from "./Icons";
 
 export interface FileUploadAreaProps {
   /** Currently selected file, null = empty state */
@@ -124,13 +125,7 @@ export default function FileUploadArea({
             aria-label="移除文件"
             className="rounded-full p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path
-                fillRule="evenodd"
-                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                clipRule="evenodd"
-              />
-            </svg>
+            <XCircleIcon className="h-5 w-5" />
           </button>
         </div>
       );
@@ -139,18 +134,7 @@ export default function FileUploadArea({
     if (isDragging) {
       return (
         <div className="text-center">
-          <svg
-            className="mx-auto mb-2 h-8 w-8 text-blue-500"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            aria-hidden="true"
-          >
-            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-            <polyline points="17 8 12 3 7 8" />
-            <line x1="12" y1="3" x2="12" y2="15" />
-          </svg>
+          <UploadArrowIcon className="mx-auto mb-2 h-8 w-8 text-blue-500" />
           <p className="text-sm font-medium text-blue-600">释放文件以上传</p>
         </div>
       );
@@ -158,18 +142,7 @@ export default function FileUploadArea({
 
     return (
       <div className="text-center">
-        <svg
-          className="mx-auto mb-2 h-8 w-8 text-gray-400"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={2}
-          aria-hidden="true"
-        >
-          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-          <polyline points="17 8 12 3 7 8" />
-          <line x1="12" y1="3" x2="12" y2="15" />
-        </svg>
+        <UploadArrowIcon className="mx-auto mb-2 h-8 w-8 text-gray-400" />
         <p className="text-sm text-gray-600">拖拽 PDF 文件到此处，或点击选择文件</p>
       </div>
     );

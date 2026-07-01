@@ -63,8 +63,8 @@ export default function TagsPage() {
       <h1 className="mb-6 text-xl font-semibold text-gray-900">标签管理</h1>
 
       {/* Loading state */}
-      {isLoading && !tags ? (
-        <div className="space-y-3">
+      {isLoading ? (
+        <div className="space-y-3 rounded-lg border border-gray-200 bg-white p-5">
           {Array.from({ length: 5 }).map((_, i) => (
             <Skeleton key={i} className="h-14 w-full" />
           ))}
@@ -73,7 +73,7 @@ export default function TagsPage() {
       isError ? (
         <ErrorState
           title="加载标签失败"
-          message={error instanceof Error ? error.message : "请检查网络连接后重试"}
+          message={getErrorMessage(error, "请检查网络连接后重试")}
           onRetry={() => refetch()}
         />
       ) : /* Empty state */
@@ -115,12 +115,14 @@ export default function TagsPage() {
                           onClick={handleSaveEdit}
                           disabled={updateTagMutation.isPending}
                           className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+                          aria-label="保存标签"
                         >
                           保存
                         </button>
                         <button
                           onClick={cancelEditing}
                           className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100"
+                          aria-label="取消编辑"
                         >
                           取消
                         </button>
@@ -138,6 +140,7 @@ export default function TagsPage() {
                           onClick={() => handleDelete(tag.id)}
                           disabled={deleteTagMutation.isPending}
                           className="rounded-md bg-red-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-red-700 disabled:opacity-50"
+                          aria-label="确认删除标签"
                         >
                           确认
                         </button>
@@ -146,6 +149,7 @@ export default function TagsPage() {
                             setDeletingId(null);
                           }}
                           className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100"
+                          aria-label="取消删除"
                         >
                           取消
                         </button>
@@ -155,6 +159,7 @@ export default function TagsPage() {
                         <button
                           onClick={() => startEditing(tag.id, tag.name)}
                           className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100"
+                          aria-label={`编辑标签 ${tag.name}`}
                         >
                           编辑
                         </button>
@@ -164,6 +169,7 @@ export default function TagsPage() {
                             setEditingId(null); // 互斥：删除确认时关闭编辑
                           }}
                           className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
+                          aria-label={`删除标签 ${tag.name}`}
                         >
                           删除
                         </button>

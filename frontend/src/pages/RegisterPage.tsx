@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import AuthLayout from "../layout/AuthLayout";
+import Spinner from "../components/ui/Spinner";
 import { useRegister } from "../hooks/useAuth";
+import { getErrorMessage } from "../utils/error";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -50,11 +52,7 @@ export default function RegisterPage() {
         state: { registered: true },
       });
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("注册失败，请稍后重试");
-      }
+      setError(getErrorMessage(err, "注册失败，请稍后重试"));
     }
   };
 
@@ -149,11 +147,11 @@ export default function RegisterPage() {
         <button
           type="submit"
           disabled={registerMutation.isPending}
-          className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {registerMutation.isPending ? (
             <span className="inline-flex items-center gap-2">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              <Spinner size="md" variant="white" />
               注册中...
             </span>
           ) : (

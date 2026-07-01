@@ -1,3 +1,5 @@
+import { WarningIcon } from "./Icons";
+
 interface ErrorStateProps {
   /** 错误标题 */
   title: string;
@@ -17,19 +19,7 @@ export default function ErrorState({
 }: ErrorStateProps) {
   return (
     <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-      <svg
-        className="mx-auto mb-3 h-10 w-10 text-red-400"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
-        strokeWidth={1.5}
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
-        />
-      </svg>
+      <WarningIcon className="mx-auto mb-3 h-10 w-10 text-red-400" />
       <p className="text-sm font-medium text-red-600">{title}</p>
       {message && <p className="mt-1 text-xs text-red-500">{message}</p>}
       {onRetry && (

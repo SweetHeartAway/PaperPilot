@@ -1,64 +1,13 @@
 import { formatDate, formatFileSize } from "../../utils/format";
-import ErrorState from "../ui/ErrorState";
-import Skeleton from "../ui/Skeleton";
 import type { Paper } from "../../types/paper";
 
 interface PaperInfoProps {
-  paper: Paper | undefined;
-  isLoading: boolean;
-  isError: boolean;
-  error: Error | null;
-  onRetry: () => void;
+  paper: Paper;
   /** 论文文件下载 URL（需由父层拼接，避免组件直接引用 api/） */
   downloadUrl?: string;
 }
 
-export default function PaperInfo({
-  paper,
-  isLoading,
-  isError,
-  error,
-  onRetry,
-  downloadUrl,
-}: PaperInfoProps) {
-  if (isLoading) {
-    return (
-      <div role="status" aria-label="加载中" className="space-y-4">
-        <Skeleton className="h-7 w-3/4" />
-        <Skeleton className="h-4 w-1/2" />
-        <div className="flex gap-4">
-          <Skeleton className="h-3 w-24" />
-          <Skeleton className="h-3 w-36" />
-        </div>
-        <div className="pt-4">
-          <Skeleton className="mb-2 h-5 w-16" />
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="mt-1 h-4 w-5/6" />
-          <Skeleton className="mt-1 h-4 w-4/6" />
-        </div>
-        <Skeleton className="mt-4 h-10 w-32" />
-      </div>
-    );
-  }
-
-  if (isError) {
-    return (
-      <ErrorState
-        title="加载论文信息失败"
-        message={error instanceof Error ? error.message : "请检查网络连接后重试"}
-        onRetry={onRetry}
-      />
-    );
-  }
-
-  if (!paper) {
-    return (
-      <div className="rounded-lg border border-gray-200 bg-gray-50 p-6 text-center">
-        <p className="text-sm text-gray-500">论文不存在</p>
-      </div>
-    );
-  }
-
+export default function PaperInfo({ paper, downloadUrl }: PaperInfoProps) {
   return (
     <div>
       <h1 className="text-xl font-semibold text-gray-900">{paper.title}</h1>

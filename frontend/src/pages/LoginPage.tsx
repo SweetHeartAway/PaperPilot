@@ -1,7 +1,9 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import AuthLayout from "../layout/AuthLayout";
+import Spinner from "../components/ui/Spinner";
 import { useLogin } from "../hooks/useAuth";
+import { getErrorMessage } from "../utils/error";
 
 export default function LoginPage() {
   const navigate = useNavigate();
@@ -33,11 +35,7 @@ export default function LoginPage() {
       await loginMutation.mutateAsync({ username: username.trim(), password });
       navigate(from, { replace: true });
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message);
-      } else {
-        setError("登录失败，请检查用户名和密码");
-      }
+      setError(getErrorMessage(err, "登录失败，请检查用户名和密码"));
     }
   };
 
@@ -96,11 +94,11 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loginMutation.isPending}
-          className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+          className="w-full rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {loginMutation.isPending ? (
             <span className="inline-flex items-center gap-2">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+              <Spinner size="md" variant="white" />
               登录中...
             </span>
           ) : (

@@ -1,4 +1,6 @@
 import { useState, useRef } from "react";
+import Spinner from "../ui/Spinner";
+import { XIcon } from "../ui/Icons";
 import type { Tag } from "../../types/tag";
 
 interface TagManagerProps {
@@ -64,17 +66,9 @@ export default function TagManager({
                   aria-label={`移除标签 ${tag.name}`}
                 >
                   {isRemoving ? (
-                    <div className="h-3 w-3 animate-spin rounded-full border-2 border-blue-400 border-t-transparent" />
+                    <Spinner size="sm" variant="blue" />
                   ) : (
-                    <svg
-                      className="h-3.5 w-3.5"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2}
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
+                    <XIcon className="h-3.5 w-3.5" />
                   )}
                 </button>
               </span>
@@ -93,9 +87,7 @@ export default function TagManager({
             disabled={addPending}
             className="w-28 rounded-full border border-gray-300 bg-white px-3 py-1 text-xs text-gray-900 placeholder-gray-400 transition-colors focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:cursor-not-allowed disabled:opacity-50"
           />
-          {addPending && (
-            <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-blue-500 border-t-transparent" />
-          )}
+          {addPending && <Spinner size="sm" variant="blue" />}
         </div>
       </div>
     </section>

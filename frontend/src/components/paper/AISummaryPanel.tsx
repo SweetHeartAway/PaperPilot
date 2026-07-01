@@ -1,4 +1,5 @@
 import Skeleton from "../ui/Skeleton";
+import Spinner from "../ui/Spinner";
 import TabBar, { type Tab } from "../ui/TabBar";
 import type { AIAnalysisStatus } from "../../types/ai";
 
@@ -115,7 +116,7 @@ export default function AISummaryPanel({
           >
             {triggerPending ? (
               <>
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                <Spinner size="md" variant="white" />
                 请求中...
               </>
             ) : (
@@ -138,11 +139,7 @@ export default function AISummaryPanel({
       <div className="rounded-lg border border-gray-200 bg-white">
         <TabBar tabs={tabs} active={activeTab} onChange={onTabChange} />
         <div className="flex flex-col items-center p-5 py-8">
-          <div
-            className="mb-4 h-10 w-10 animate-spin rounded-full border-4 border-blue-200 border-t-blue-600"
-            role="status"
-            aria-label="AI 分析中"
-          />
+          <Spinner size="lg" variant="blue" className="mb-4" />
           <p className="text-sm font-medium text-blue-600">{getTabLabel(activeTab)} 分析中...</p>
           <p className="mt-1 text-xs text-gray-400">
             {analysis.status === "processing" ? "正在处理" : "等待中"}
@@ -174,7 +171,7 @@ export default function AISummaryPanel({
           >
             {triggerPending ? (
               <>
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                <Spinner size="md" variant="white" />
                 请求中...
               </>
             ) : (
