@@ -149,7 +149,7 @@ def delete_file(
     success = delete_paper_file(db, paper_id, current_user.id)
     if not success:
         raise HTTPException(status_code=404, detail="文件不存在")
-    db_paper = get_paper(db, paper_id=paper_id)
+    db_paper = get_paper(db, paper_id=paper_id, user_id=current_user.id)
     return db_paper
 
 
@@ -270,14 +270,22 @@ def create_ai_summary(
 
     支持 custom_prompt_id 参数使用自定义提示词模板。
     """
-    return trigger_ai_summary(
-        db,
-        paper_id=paper_id,
-        user_id=current_user.id,
-        analysis_type=request.analysis_type,
-        force_regenerate=request.force_regenerate,
-        custom_prompt_id=request.custom_prompt_id,
-    )
+    try:
+        return trigger_ai_summary(
+            db,
+            paper_id=paper_id,
+            user_id=current_user.id,
+            analysis_type=request.analysis_type,
+            force_regenerate=request.force_regenerate,
+            custom_prompt_id=request.custom_prompt_id,
+        )
+    except ValueError as e:
+        detail = str(e)
+        if "不存在" in detail:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=detail)
+        if "正在分析" in detail:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=detail)
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=detail)
 
 
 # ─── AI Summary — 版本管理 ──────────────────────────────────

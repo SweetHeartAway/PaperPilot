@@ -18,7 +18,6 @@ from app.services.ai_utils import (
 )
 from app.services.paper_service import get_paper
 from app.utils.ai_client import ai_client
-from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
@@ -213,15 +212,12 @@ def trigger_ai_summary(
     # 1. 验证论文
     paper = get_paper(db, paper_id, user_id)
     if not paper:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="论文不存在")
+        raise ValueError("论文不存在")
 
     # 2. 检查进行中的分析
     pending = _get_pending_analysis(db, paper_id, analysis_type)
     if pending:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="该论文正在分析中，请稍后查询",
-        )
+        raise ValueError("该论文正在分析中，请稍后查询")
 
     # 3. 检查缓存
     if not force_regenerate:
@@ -263,10 +259,7 @@ def trigger_ai_summary(
     if custom_prompt_id:
         prompt_template = prompt_service.get_template(db, custom_prompt_id, user_id)
         if not prompt_template:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"提示词模板不存在: id={custom_prompt_id}",
-            )
+            raise ValueError(f"提示词模板不存在: id={custom_prompt_id}")
         analysis.prompt_template_id = custom_prompt_id
     else:
         # 尝试加载默认模板
@@ -317,17 +310,14 @@ def trigger_ai_summary(
         analysis.error_message = str(e)
         db.commit()
         db.refresh(analysis)
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        raise
 
     except Exception as e:
         analysis.status = "failed"
         analysis.error_message = f"AI 分析失败: {str(e)}"
         db.commit()
         db.refresh(analysis)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"AI 服务暂时不可用，请稍后重试: {str(e)}",
-        )
+        raise ValueError(f"AI 服务暂时不可用，请稍后重试: {str(e)}")
 
     return analysis
 
@@ -406,9 +396,9 @@ def trigger_batch_analysis(
             item["status"] = "accepted"
             item["analysis_id"] = analysis.id
             accepted += 1
-        except HTTPException as e:
+        except ValueError as e:
             item["status"] = "failed"
-            item["reason"] = e.detail
+            item["reason"] = str(e)
             skipped += 1  # 计入未成功
         except Exception as e:
             item["status"] = "failed"

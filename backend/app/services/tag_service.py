@@ -3,7 +3,7 @@
 from app.models.paper import Paper
 from app.models.tag import Tag
 from app.schemas.tag import TagCreate, TagUpdate
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 
 def create_tag(db: Session, tag: TagCreate):
@@ -26,8 +26,8 @@ def get_tags(db: Session, skip: int = 0, limit: int = 100):
 
 
 def get_tag(db: Session, tag_id: int):
-    """获取标签详情"""
-    return db.query(Tag).filter(Tag.id == tag_id).first()
+    """获取标签详情（含论文关联，避免 N+1）"""
+    return db.query(Tag).options(selectinload(Tag.papers)).filter(Tag.id == tag_id).first()
 
 
 def update_tag(db: Session, tag_id: int, tag: TagUpdate):

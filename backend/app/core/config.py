@@ -1,5 +1,8 @@
 """应用配置 — Pydantic Settings"""
 
+from typing import Any
+
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -40,7 +43,26 @@ class Settings(BaseSettings):
 
     # 文件上传配置
     UPLOAD_DIR: str = "./uploads"
-    MAX_UPLOAD_SIZE: int = 50 * 1024 * 1024  # 50MB
+    MAX_UPLOAD_SIZE: int = 50 * 1024 * 1024  # 50MB（默认值）
+
+    # CORS 配置
+    ALLOWED_ORIGINS: str = "http://localhost:5173,http://127.0.0.1:5173"
+    """允许的跨源域名，多个用逗号分隔。生产环境需改为实际域名。"""
+
+    @field_validator("MAX_UPLOAD_SIZE", mode="before")
+    @classmethod
+    def parse_max_upload_size(cls, v: Any) -> int:
+        """支持人类可读的文件大小格式：50MB、1GB、512KB 或纯字节数"""
+        if isinstance(v, str):
+            v = v.strip().upper()
+            if v.endswith("GB"):
+                return int(v[:-2]) * 1024 * 1024 * 1024
+            if v.endswith("MB"):
+                return int(v[:-2]) * 1024 * 1024
+            if v.endswith("KB"):
+                return int(v[:-2]) * 1024
+            return int(v)
+        return int(v)
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import type { Tag } from "../../types/tag";
 
 interface TagManagerProps {
@@ -21,12 +21,15 @@ export default function TagManager({
   removePendingTagId = null,
 }: TagManagerProps) {
   const [inputValue, setInputValue] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleAdd = () => {
     const name = inputValue.trim();
     if (!name) return;
     onAdd(name);
     setInputValue("");
+    // 添加后自动聚焦输入框，方便连续添加标签
+    inputRef.current?.focus();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -81,6 +84,7 @@ export default function TagManager({
 
         <div className="inline-flex items-center gap-1">
           <input
+            ref={inputRef}
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}

@@ -43,12 +43,26 @@ def format_user_prompt(template: str | None, paper: Any, content: str) -> str:
     if not template:
         return content
 
-    return template.format(
-        title=paper.title or "",
-        abstract=paper.abstract or "",
-        content=content,
-        authors=paper.authors or "",
-    )
+    # 安全格式化：未知占位符静默转为空字符串
+    placeholders = {
+        "title": paper.title or "",
+        "abstract": paper.abstract or "",
+        "content": content,
+        "authors": paper.authors or "",
+    }
+    # 如果模板包含未知占位符，format() 会抛 KeyError
+    # 使用 safe_substitute 方式：先提取模板中的占位符
+    import re
+
+    known_keys = set(placeholders.keys())
+    found_keys = set(re.findall(r"\{(\w+)\}", template))
+    unknown = found_keys - known_keys
+    if unknown:
+        logger.warning("Prompt 模板包含未知占位符: %s，将视为空字符串", unknown)
+        for key in unknown:
+            placeholders[key] = ""
+
+    return template.format(**placeholders)
 
 
 def build_result_dict(summary: str, keywords: list[str]) -> str:

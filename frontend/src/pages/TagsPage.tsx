@@ -1,27 +1,17 @@
 import { useState } from "react";
-import axios from "axios";
 import { useAllTags, useUpdateTag, useDeleteTag } from "../hooks/useTagManagement";
 import Content from "../layout/Content";
 import Skeleton from "../components/ui/Skeleton";
 import EmptyState from "../components/ui/EmptyState";
 import ErrorState from "../components/ui/ErrorState";
-import { useToastStore } from "../stores/toastStore";
-
-function getErrorMessage(err: unknown, fallback: string): string {
-  if (axios.isAxiosError(err)) {
-    return (err.response?.data as { detail?: string } | undefined)?.detail ?? fallback;
-  }
-  if (err instanceof Error) {
-    return err.message;
-  }
-  return fallback;
-}
+import { useToast } from "../hooks/useToast";
+import { getErrorMessage } from "../utils/error";
 
 export default function TagsPage() {
   const { data: tags, isLoading, isError, error, refetch } = useAllTags();
   const updateTagMutation = useUpdateTag();
   const deleteTagMutation = useDeleteTag();
-  const toast = useToastStore();
+  const toast = useToast();
 
   // Inline editing state
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -33,6 +23,7 @@ export default function TagsPage() {
   const startEditing = (id: number, name: string) => {
     setEditingId(id);
     setEditName(name);
+    setDeletingId(null); // 互斥：编辑时关闭删除确认
   };
 
   const cancelEditing = () => {
@@ -44,34 +35,26 @@ export default function TagsPage() {
     if (editingId === null) return;
     const trimmed = editName.trim();
     if (!trimmed) {
-      toast.add({ type: "error", message: "标签名称不能为空", duration: 3000 });
+      toast.error("标签名称不能为空");
       return;
     }
     try {
       await updateTagMutation.mutateAsync({ id: editingId, name: trimmed });
-      toast.add({ type: "success", message: "标签已更新", duration: 2000 });
+      toast.success("标签已更新");
       setEditingId(null);
       setEditName("");
     } catch (err) {
-      toast.add({
-        type: "error",
-        message: getErrorMessage(err, "更新标签失败"),
-        duration: 3000,
-      });
+      toast.error(getErrorMessage(err, "更新标签失败"));
     }
   };
 
   const handleDelete = async (id: number) => {
     try {
       await deleteTagMutation.mutateAsync(id);
-      toast.add({ type: "success", message: "标签已删除", duration: 2000 });
+      toast.success("标签已删除");
       setDeletingId(null);
     } catch (err) {
-      toast.add({
-        type: "error",
-        message: getErrorMessage(err, "删除标签失败"),
-        duration: 3000,
-      });
+      toast.error(getErrorMessage(err, "删除标签失败"));
     }
   };
 
@@ -159,7 +142,9 @@ export default function TagsPage() {
                           确认
                         </button>
                         <button
-                          onClick={() => setDeletingId(null)}
+                          onClick={() => {
+                            setDeletingId(null);
+                          }}
                           className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100"
                         >
                           取消
@@ -174,7 +159,10 @@ export default function TagsPage() {
                           编辑
                         </button>
                         <button
-                          onClick={() => setDeletingId(tag.id)}
+                          onClick={() => {
+                            setDeletingId(tag.id);
+                            setEditingId(null); // 互斥：删除确认时关闭编辑
+                          }}
                           className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
                         >
                           删除

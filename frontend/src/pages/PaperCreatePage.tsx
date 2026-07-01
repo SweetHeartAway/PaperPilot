@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import FileUploadArea from "../components/ui/FileUploadArea";
 import UploadProgress from "../components/ui/UploadProgress";
-import { createPaper, uploadPaperFile } from "../api/papers";
+import { useCreatePaper } from "../hooks/useCreatePaper";
+import { uploadPaperFile } from "../api/papers";
 import { useToast } from "../hooks/useToast";
 
 type PageStatus = "form" | "creating" | "uploading" | "error";
@@ -12,6 +13,7 @@ export default function PaperCreatePage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const toast = useToast();
+  const createPaperMutation = useCreatePaper();
 
   // Form state
   const [title, setTitle] = useState("");
@@ -24,6 +26,9 @@ export default function PaperCreatePage() {
   // Upload state
   const [status, setStatus] = useState<PageStatus>("form");
   const [progress, setProgress] = useState(0);
+
+  /** 缓存已创建的论文 ID，重试时避免重复创建 */
+  const paperIdRef = useRef<number | null>(null);
 
   const isSubmitting = status === "creating" || status === "uploading";
 
@@ -52,30 +57,44 @@ export default function PaperCreatePage() {
   const handleSubmit = useCallback(async () => {
     if (!title.trim() || !file) return;
 
-    setStatus("creating");
+    const hasCachedPaper = paperIdRef.current !== null;
+
+    if (!hasCachedPaper) {
+      setStatus("creating");
+      loadingToastRef.current = toast.loading("正在创建论文...");
+    } else {
+      // 有缓存 paperId → 重试场景，跳过创建直接上传
+      setStatus("uploading");
+    }
 
     try {
-      // Step 1: Create paper metadata
-      loadingToastRef.current = toast.loading("正在创建论文...");
+      let paperId: number;
 
-      const paper = await createPaper({
-        title: title.trim(),
-        authors: authors.trim() || undefined,
-        abstract: abstract.trim() || undefined,
-        doi: doi.trim() || undefined,
-      });
+      if (hasCachedPaper) {
+        paperId = paperIdRef.current!;
+      } else {
+        const paper = await createPaperMutation.mutateAsync({
+          title: title.trim(),
+          authors: authors.trim() || undefined,
+          abstract: abstract.trim() || undefined,
+          doi: doi.trim() || undefined,
+        });
+        paperIdRef.current = paper.id;
+        paperId = paper.id;
 
-      // Dismiss "creating" toast — uploading uses inline progress bar
-      loadingToastRef.current();
-      loadingToastRef.current = null;
+        // Dismiss "creating" toast
+        loadingToastRef.current?.();
+        loadingToastRef.current = null;
+        setStatus("uploading");
+      }
 
-      // Step 2: Upload PDF
-      setStatus("uploading");
-      await uploadPaperFile(paper.id, file, (pct: number) => setProgress(pct));
+      // Upload PDF
+      await uploadPaperFile(paperId, file, (pct: number) => setProgress(pct));
 
-      // Step 3: Success
+      // Success
       queryClient.invalidateQueries({ queryKey: ["papers"] });
       toast.success("论文上传成功");
+      paperIdRef.current = null; // 清理缓存
       navigate("/papers");
     } catch (err) {
       setStatus("error");
@@ -83,11 +102,12 @@ export default function PaperCreatePage() {
       loadingToastRef.current = null;
       toast.error(err instanceof Error ? err.message : "上传失败，请重试");
     }
-  }, [title, authors, abstract, doi, file, navigate, queryClient, toast]);
+  }, [title, authors, abstract, doi, file, navigate, queryClient, toast, createPaperMutation]);
 
   const handleRetry = useCallback(() => {
     setStatus("form");
     setProgress(0);
+    // 注意：paperIdRef 不清空，重试时复用已有论文 ID 避免重复创建
   }, []);
 
   // ─── Render ───

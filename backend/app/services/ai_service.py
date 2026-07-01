@@ -6,6 +6,7 @@
 
 import json
 import logging
+from datetime import UTC, datetime
 from typing import Any
 
 from app.core.prompts import KEYWORD_SYSTEM_PROMPT, SUMMARY_SYSTEM_PROMPT
@@ -76,7 +77,7 @@ def analyze_paper(content: str) -> dict[str, Any]:
             },
             ensure_ascii=False,
         ),
-        "created_at": "2023-01-01T00:00:00",
+        "created_at": datetime.now(UTC).isoformat(),
     }
 
 

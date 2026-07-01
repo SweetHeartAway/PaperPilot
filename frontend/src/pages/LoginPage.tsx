@@ -1,24 +1,24 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
 import AuthLayout from "../layout/AuthLayout";
-import { login } from "../api/auth";
-import { useAuthStore } from "../stores/authStore";
+import { useLogin } from "../hooks/useAuth";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
-  const setAuth = useAuthStore((s) => s.setAuth);
+  const loginMutation = useLogin();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
   // 注册成功后跳转过来显示提示
   const registered = (location.state as { registered?: boolean })?.registered;
 
   // 登录成功后跳转到之前试图访问的页面，没有则回论文列表
-  const from = (location.state as { from?: string })?.from ?? "/papers";
+  // 支持从 URL 参数（401 拦截器跳转）和 react-router state（ProtectedRoute）获取来源路径
+  const redirectParam = new URLSearchParams(window.location.search).get("redirect");
+  const from = redirectParam ?? (location.state as { from?: string })?.from ?? "/papers";
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -28,11 +28,9 @@ export default function LoginPage() {
     }
 
     setError("");
-    setLoading(true);
 
     try {
-      const res = await login({ username: username.trim(), password });
-      setAuth(res.access_token);
+      await loginMutation.mutateAsync({ username: username.trim(), password });
       navigate(from, { replace: true });
     } catch (err: unknown) {
       if (err instanceof Error) {
@@ -40,8 +38,6 @@ export default function LoginPage() {
       } else {
         setError("登录失败，请检查用户名和密码");
       }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -72,7 +68,7 @@ export default function LoginPage() {
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            disabled={loading}
+            disabled={loginMutation.isPending}
             autoComplete="username"
             placeholder="输入用户名"
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
@@ -89,7 +85,7 @@ export default function LoginPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            disabled={loading}
+            disabled={loginMutation.isPending}
             autoComplete="current-password"
             placeholder="输入密码"
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
@@ -99,10 +95,10 @@ export default function LoginPage() {
         {/* Submit */}
         <button
           type="submit"
-          disabled={loading}
+          disabled={loginMutation.isPending}
           className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading ? (
+          {loginMutation.isPending ? (
             <span className="inline-flex items-center gap-2">
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
               登录中...

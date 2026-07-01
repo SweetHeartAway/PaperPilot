@@ -69,18 +69,26 @@ def upload_paper_file(db: Session, paper_id: int, user_id: int, file: UploadFile
     ext = os.path.splitext(file.filename)[1] or ".pdf"
     file_path = os.path.join(upload_dir, f"{file_uuid}{ext}")
 
-    # 校验文件大小
-    content = file.file.read()
-    if len(content) > settings.MAX_UPLOAD_SIZE:
-        raise ValueError(f"文件过大，最大允许 {settings.MAX_UPLOAD_SIZE // (1024*1024)}MB")
-
+    # 分块读取，渐进校验大小（避免 OOM）
+    CHUNK_SIZE = 64 * 1024  # 64KB
+    total = 0
     with open(file_path, "wb") as f:
-        f.write(content)
+        while True:
+            chunk = file.file.read(CHUNK_SIZE)
+            if not chunk:
+                break
+            total += len(chunk)
+            if total > settings.MAX_UPLOAD_SIZE:
+                # 删除已写入的部分文件
+                f.close()
+                os.remove(file_path)
+                raise ValueError(f"文件过大，最大允许 {settings.MAX_UPLOAD_SIZE // (1024*1024)}MB")
+            f.write(chunk)
 
     # 更新数据库记录
     db_paper.file_uuid = file_uuid
     db_paper.original_filename = file.filename
-    db_paper.file_size = len(content)
+    db_paper.file_size = total
     db_paper.file_path = file_path
 
     # 文件变更后，自动失效旧的 AI 分析缓存

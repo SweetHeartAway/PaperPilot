@@ -16,18 +16,14 @@ export default function PaperListPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
 
-  // Debounce search input
+  // Debounce search input + 同时重置到第 1 页（合并 effect 避免重复请求）
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery);
+      setPage(1);
     }, 300);
     return () => clearTimeout(timer);
   }, [searchQuery]);
-
-  // Reset to page 1 when search changes
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
 
   const { data, isLoading, isError, error, refetch } = usePaperList({
     page,

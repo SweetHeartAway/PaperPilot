@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { usePaper, usePaperAISummary, useTriggerAIAnalysis } from "../hooks/usePapers";
 import { useAddPaperTag, useRemovePaperTag } from "../hooks/useTags";
-import client from "../api/client";
+import { getPaperDownloadUrl } from "../api/papers";
 import Content from "../layout/Content";
 import PaperInfo from "../components/paper/PaperInfo";
 import AISummaryPanel from "../components/paper/AISummaryPanel";
@@ -122,11 +122,7 @@ export default function PaperDetailPage() {
                 isError={isError}
                 error={error}
                 onRetry={() => refetch()}
-                downloadUrl={
-                  paper.file_uuid
-                    ? `${client.defaults.baseURL}/api/v1/papers/${paper.id}/download`
-                    : undefined
-                }
+                downloadUrl={paper.file_uuid ? getPaperDownloadUrl(paper.id) : undefined}
               />
             </div>
             <div className="w-full lg:w-96">

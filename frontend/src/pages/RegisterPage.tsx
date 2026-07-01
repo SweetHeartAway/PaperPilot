@@ -1,17 +1,19 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import AuthLayout from "../layout/AuthLayout";
-import { register } from "../api/auth";
+import { useRegister } from "../hooks/useAuth";
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function RegisterPage() {
   const navigate = useNavigate();
+  const registerMutation = useRegister();
 
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -22,29 +24,27 @@ export default function RegisterPage() {
       setError("请填写所有必填字段");
       return;
     }
+    if (!EMAIL_REGEX.test(email.trim())) {
+      setError("请输入有效的邮箱地址");
+      return;
+    }
     if (password !== confirmPassword) {
       setError("两次密码输入不一致");
       return;
     }
-    if (password.length < 6) {
-      setError("密码长度至少 6 位");
+    if (password.length < 8) {
+      setError("密码长度至少 8 位");
       return;
     }
 
-    setLoading(true);
-
     try {
-      await register({
+      await registerMutation.mutateAsync({
         username: username.trim(),
         email: email.trim(),
         password,
       });
 
-      // 注册成功后自动登录（调用 /auth/login 获取 token）
-      // 后端注册接口返回 User，不含 token，需单独调 login
-      // 但为了简化用户体验，直接跳转到登录页让用户登录
-      // 如果后端注册接口直接返回了 token，可以改为自动登录
-      // 这里选择跳转到登录页并提示
+      // 跳转到登录页提示用户登录
       navigate("/login", {
         replace: true,
         state: { registered: true },
@@ -55,8 +55,6 @@ export default function RegisterPage() {
       } else {
         setError("注册失败，请稍后重试");
       }
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -83,7 +81,7 @@ export default function RegisterPage() {
             type="text"
             value={username}
             onChange={(e) => setUsername(e.target.value)}
-            disabled={loading}
+            disabled={registerMutation.isPending}
             autoComplete="username"
             placeholder="输入用户名"
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
@@ -100,7 +98,7 @@ export default function RegisterPage() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            disabled={loading}
+            disabled={registerMutation.isPending}
             autoComplete="email"
             placeholder="输入邮箱地址"
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
@@ -120,9 +118,9 @@ export default function RegisterPage() {
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            disabled={loading}
+            disabled={registerMutation.isPending}
             autoComplete="new-password"
-            placeholder="至少 6 位密码"
+            placeholder="至少 8 位密码"
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
           />
         </div>
@@ -140,7 +138,7 @@ export default function RegisterPage() {
             type="password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            disabled={loading}
+            disabled={registerMutation.isPending}
             autoComplete="new-password"
             placeholder="再次输入密码"
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 disabled:bg-gray-100"
@@ -150,10 +148,10 @@ export default function RegisterPage() {
         {/* Submit */}
         <button
           type="submit"
-          disabled={loading}
+          disabled={registerMutation.isPending}
           className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {loading ? (
+          {registerMutation.isPending ? (
             <span className="inline-flex items-center gap-2">
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
               注册中...

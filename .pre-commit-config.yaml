@@ -47,7 +47,7 @@ repos:
     hooks:
       - id: pytest-check
         name: pytest (block on failure)
-        entry: cmd /c "set PYTHONPATH=. && cd /d E:\paper-manager-project\backend && python -m pytest tests/ -x --tb=short"
+        entry: cmd /c "cd /d .\backend && set PYTHONPATH=. && python -m pytest tests/ -x --tb=short"
         language: system
         files: ^backend/
         types_or: [python, pyi]

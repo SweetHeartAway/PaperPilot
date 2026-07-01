@@ -27,7 +27,13 @@ client.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       useAuthStore.getState().clearAuth();
-      window.location.href = "/login";
+      const currentPath = window.location.pathname;
+      // 保留来源路径，登录后可以跳转回来
+      if (currentPath !== "/login" && currentPath !== "/register") {
+        window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+      } else {
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   },

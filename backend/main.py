@@ -19,7 +19,7 @@ app = FastAPI(title=settings.PROJECT_NAME, description="AI论文管理平台", v
 
 
 @app.exception_handler(HTTPException)
-async def http_exception_handler(request: Request, exc: HTTPException):
+def http_exception_handler(request: Request, exc: HTTPException):
     """保留原有 HTTPException 的 status_code 和 detail，确保 JSON 格式统一"""
     return JSONResponse(
         status_code=exc.status_code,
@@ -28,7 +28,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
 
 
 @app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
+def global_exception_handler(request: Request, exc: Exception):
     """未捕获异常兜底 — 避免泄露内部实现细节"""
     logger.exception("未捕获的服务器异常: %s %s", request.method, request.url.path)
     return JSONResponse(
@@ -37,13 +37,10 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
-# CORS 中间件 — 开发环境允许前端跨源访问
+# CORS 中间件 — 允许前端跨源访问（来源由 settings.ALLOWED_ORIGINS 控制）
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ],
+    allow_origins=[o.strip() for o in settings.ALLOWED_ORIGINS.split(",") if o.strip()],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
