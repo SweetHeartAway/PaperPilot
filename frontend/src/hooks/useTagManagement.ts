@@ -1,11 +1,21 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { fetchTags, updateTag, deleteTag } from "../services/tagService";
+import { fetchTags, createTag, updateTag, deleteTag } from "../services/tagService";
 import { queryKeys } from "../utils/queryKeys";
 
 export function useAllTags() {
   return useQuery({
     queryKey: queryKeys.tags.all,
     queryFn: fetchTags,
+  });
+}
+
+export function useCreateTag() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { name: string }) => createTag(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tags.all });
+    },
   });
 }
 

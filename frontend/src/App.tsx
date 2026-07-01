@@ -16,6 +16,7 @@ import PaperListPage from "./pages/PaperListPage";
 const PaperCreatePage = lazy(() => import("./pages/PaperCreatePage"));
 const PaperDetailPage = lazy(() => import("./pages/PaperDetailPage"));
 const TagsPage = lazy(() => import("./pages/TagsPage"));
+const PromptsPage = lazy(() => import("./pages/PromptsPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
 const NotFoundPage = lazy(() => import("./pages/NotFoundPage"));
 const ErrorPage = lazy(() => import("./pages/ErrorPage"));
@@ -23,6 +24,7 @@ const ErrorPage = lazy(() => import("./pages/ErrorPage"));
 const NAV_ITEMS: NavItem[] = [
   { to: "/papers", label: "论文" },
   { to: "/tags", label: "标签" },
+  { to: "/prompts", label: "Prompt 模板" },
   { to: "/profile", label: "个人中心" },
 ];
 
@@ -70,6 +72,7 @@ export default function App() {
                 <Route path="papers/create" element={<PaperCreatePage />} />
                 <Route path="papers/:id" element={<PaperDetailPage />} />
                 <Route path="tags" element={<TagsPage />} />
+                <Route path="prompts" element={<PromptsPage />} />
                 <Route path="profile" element={<ProfilePage />} />
               </Route>
             </Route>

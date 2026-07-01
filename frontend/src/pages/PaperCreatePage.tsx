@@ -4,6 +4,7 @@ import FileUploadArea from "../components/ui/FileUploadArea";
 import UploadProgress from "../components/ui/UploadProgress";
 import { useCreatePaper } from "../hooks/useCreatePaper";
 import { uploadPaperFile } from "../api/papers";
+import { useAllTags } from "../hooks/useTagManagement";
 import { useToast } from "../hooks/useToast";
 
 type PageStatus = "form" | "creating" | "uploading" | "error";
@@ -18,8 +19,13 @@ export default function PaperCreatePage() {
   const [authors, setAuthors] = useState("");
   const [abstract, setAbstract] = useState("");
   const [doi, setDoi] = useState("");
+  const [publicationDate, setPublicationDate] = useState("");
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState<string>("");
+
+  // Load tags for selector
+  const { data: allTags } = useAllTags();
 
   // Upload state
   const [status, setStatus] = useState<PageStatus>("form");
@@ -76,6 +82,8 @@ export default function PaperCreatePage() {
           authors: authors.trim() || undefined,
           abstract: abstract.trim() || undefined,
           doi: doi.trim() || undefined,
+          publication_date: publicationDate ? new Date(publicationDate).toISOString() : undefined,
+          tag_ids: selectedTagIds.length > 0 ? selectedTagIds : undefined,
         });
         paperIdRef.current = paper.id;
         paperId = paper.id;
@@ -175,6 +183,63 @@ export default function PaperCreatePage() {
             className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
           />
         </div>
+
+        {/* Publication Date */}
+        <div>
+          <label htmlFor="paper-date" className="mb-1 block text-sm font-medium text-gray-700">
+            发表日期
+          </label>
+          <input
+            id="paper-date"
+            type="date"
+            value={publicationDate}
+            onChange={(e) => setPublicationDate(e.target.value)}
+            disabled={isSubmitting}
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
+          />
+        </div>
+
+        {/* Tags */}
+        {allTags && allTags.length > 0 && (
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-700">标签</label>
+            <div className="flex flex-wrap gap-2">
+              {allTags.map((tag) => {
+                const isSelected = selectedTagIds.includes(tag.id);
+                return (
+                  <button
+                    key={tag.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedTagIds((prev) =>
+                        isSelected ? prev.filter((id) => id !== tag.id) : [...prev, tag.id],
+                      );
+                    }}
+                    disabled={isSubmitting}
+                    className={`inline-flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50 ${
+                      isSelected
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    {tag.name}
+                    {isSelected && (
+                      <svg
+                        className="h-3 w-3"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                        strokeWidth={2}
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         {/* Abstract */}
         <div>

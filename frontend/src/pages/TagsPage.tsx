@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useAllTags, useUpdateTag, useDeleteTag } from "../hooks/useTagManagement";
+import { useAllTags, useCreateTag, useUpdateTag, useDeleteTag } from "../hooks/useTagManagement";
 import Content from "../layout/Content";
 import Skeleton from "../components/ui/Skeleton";
 import EmptyState from "../components/ui/EmptyState";
@@ -9,9 +9,14 @@ import { getErrorMessage } from "../utils/error";
 
 export default function TagsPage() {
   const { data: tags, isLoading, isError, error, refetch } = useAllTags();
+  const createTagMutation = useCreateTag();
   const updateTagMutation = useUpdateTag();
   const deleteTagMutation = useDeleteTag();
   const toast = useToast();
+
+  // ─── Create tag ───
+  const [showCreate, setShowCreate] = useState(false);
+  const [newTagName, setNewTagName] = useState("");
 
   // Inline editing state
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -20,10 +25,31 @@ export default function TagsPage() {
   // Delete confirmation state
   const [deletingId, setDeletingId] = useState<number | null>(null);
 
+  // ─── Create handler ───
+
+  const handleCreate = async () => {
+    const trimmed = newTagName.trim();
+    if (!trimmed) {
+      toast.error("标签名称不能为空");
+      return;
+    }
+    try {
+      await createTagMutation.mutateAsync({ name: trimmed });
+      toast.success("标签已创建");
+      setNewTagName("");
+      setShowCreate(false);
+    } catch (err) {
+      toast.error(getErrorMessage(err, "创建标签失败"));
+    }
+  };
+
+  // ─── Edit handlers ───
+
   const startEditing = (id: number, name: string) => {
     setEditingId(id);
     setEditName(name);
-    setDeletingId(null); // 互斥：编辑时关闭删除确认
+    setDeletingId(null);
+    setShowCreate(false);
   };
 
   const cancelEditing = () => {
@@ -48,6 +74,8 @@ export default function TagsPage() {
     }
   };
 
+  // ─── Delete handler ───
+
   const handleDelete = async (id: number) => {
     try {
       await deleteTagMutation.mutateAsync(id);
@@ -60,7 +88,71 @@ export default function TagsPage() {
 
   return (
     <Content maxWidth="max-w-3xl">
-      <h1 className="mb-6 text-xl font-semibold text-gray-900">标签管理</h1>
+      {/* Header with create button */}
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-xl font-semibold text-gray-900">标签管理</h1>
+        {!showCreate && (
+          <button
+            onClick={() => {
+              setShowCreate(true);
+              setEditingId(null);
+              setDeletingId(null);
+            }}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+          >
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+            </svg>
+            新建标签
+          </button>
+        )}
+      </div>
+
+      {/* Create form */}
+      {showCreate && (
+        <div className="mb-6 rounded-lg border border-blue-200 bg-blue-50 p-4">
+          <label className="block text-xs font-medium text-blue-700">新标签名称</label>
+          <div className="mt-2 flex items-center gap-2">
+            <input
+              type="text"
+              value={newTagName}
+              onChange={(e) => setNewTagName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") handleCreate();
+                if (e.key === "Escape") {
+                  setShowCreate(false);
+                  setNewTagName("");
+                }
+              }}
+              placeholder="输入标签名称"
+              className="w-48 rounded-md border border-gray-300 px-3 py-1.5 text-sm text-gray-900 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              autoFocus
+            />
+            <button
+              onClick={handleCreate}
+              disabled={createTagMutation.isPending || !newTagName.trim()}
+              className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700 disabled:opacity-50"
+            >
+              {createTagMutation.isPending ? "创建中..." : "创建"}
+            </button>
+            <button
+              onClick={() => {
+                setShowCreate(false);
+                setNewTagName("");
+              }}
+              className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100"
+            >
+              取消
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Loading state */}
       {isLoading ? (
@@ -78,7 +170,22 @@ export default function TagsPage() {
         />
       ) : /* Empty state */
       tags && tags.length === 0 ? (
-        <EmptyState title="还没有标签" message="在论文详情页添加标签后，它们会显示在这里" />
+        <EmptyState
+          title="还没有标签"
+          message="创建标签后可在论文详情页中为论文添加标签"
+          action={
+            <button
+              onClick={() => {
+                setShowCreate(true);
+                setEditingId(null);
+                setDeletingId(null);
+              }}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"
+            >
+              创建第一个标签
+            </button>
+          }
+        />
       ) : (
         /* Tag list */
         <div className="overflow-hidden rounded-lg border border-gray-200">
@@ -145,9 +252,7 @@ export default function TagsPage() {
                           确认
                         </button>
                         <button
-                          onClick={() => {
-                            setDeletingId(null);
-                          }}
+                          onClick={() => setDeletingId(null)}
                           className="rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-100"
                           aria-label="取消删除"
                         >
@@ -166,7 +271,7 @@ export default function TagsPage() {
                         <button
                           onClick={() => {
                             setDeletingId(tag.id);
-                            setEditingId(null); // 互斥：删除确认时关闭编辑
+                            setEditingId(null);
                           }}
                           className="rounded-md border border-red-200 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50"
                           aria-label={`删除标签 ${tag.name}`}

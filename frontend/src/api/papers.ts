@@ -19,6 +19,7 @@ export function createPaper(data: {
   abstract?: string;
   authors?: string;
   doi?: string;
+  publication_date?: string;
   tag_ids?: number[];
 }): Promise<Paper> {
   return client.post("/api/v1/papers/", data).then((res) => res.data);
@@ -31,6 +32,7 @@ export function updatePaper(
     abstract: string;
     authors: string;
     doi: string;
+    publication_date: string;
     tag_ids: number[];
   }>,
 ): Promise<Paper> {
@@ -39,6 +41,10 @@ export function updatePaper(
 
 export function deletePaper(id: number): Promise<void> {
   return client.delete(`/api/v1/papers/${id}`).then((res) => res.data);
+}
+
+export function deletePaperFile(paperId: number): Promise<Paper> {
+  return client.delete(`/api/v1/papers/${paperId}/file`).then((res) => res.data);
 }
 
 /** 为论文添加标签（标签已存在则自动关联） */

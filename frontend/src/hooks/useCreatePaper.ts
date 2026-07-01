@@ -9,8 +9,14 @@ import { queryKeys } from "../utils/queryKeys";
 export function useCreatePaper() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { title: string; abstract?: string; authors?: string; doi?: string }) =>
-      createPaperApi(data),
+    mutationFn: (data: {
+      title: string;
+      abstract?: string;
+      authors?: string;
+      doi?: string;
+      publication_date?: string;
+      tag_ids?: number[];
+    }) => createPaperApi(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.papers.lists() });
     },

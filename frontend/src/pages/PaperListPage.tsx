@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { usePaperList } from "../hooks/usePapers";
+import { usePaperList, useDeletePaper, useBatchAIAnalysis } from "../hooks/usePapers";
 import Content from "../layout/Content";
 import PaperList from "../components/paper/PaperList";
 import PaperCardSkeleton from "../components/paper/PaperCardSkeleton";
@@ -9,6 +9,7 @@ import ErrorState from "../components/ui/ErrorState";
 import Pagination from "../components/ui/Pagination";
 import { XIcon } from "../components/ui/Icons";
 import { getErrorMessage } from "../utils/error";
+import type { Paper } from "../types/paper";
 
 const PAGE_SIZE = 20;
 
@@ -17,8 +18,14 @@ export default function PaperListPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [page, setPage] = useState(1);
+  const deleteMutation = useDeletePaper();
+  const batchAnalysisMutation = useBatchAIAnalysis();
 
-  // Debounce search input + 同时重置到第 1 页（合并 effect 避免重复请求）
+  // ─── Batch mode ───
+  const [batchMode, setBatchMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
+  // Debounce search input + 同时重置到第 1 页
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchQuery);
@@ -32,6 +39,91 @@ export default function PaperListPage() {
     pageSize: PAGE_SIZE,
     search: debouncedSearch || undefined,
   });
+
+  // ─── Handlers ───
+
+  const handleDelete = (e: React.MouseEvent, paper: Paper) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (!window.confirm(`确定删除「${paper.title}」吗？此操作不可撤销。`)) return;
+    deleteMutation.mutate(paper.id);
+  };
+
+  const toggleBatchMode = () => {
+    if (batchMode) {
+      setSelectedIds(new Set());
+    }
+    setBatchMode(!batchMode);
+  };
+
+  const toggleSelect = useCallback((e: React.MouseEvent, paperId: number) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(paperId)) {
+        next.delete(paperId);
+      } else {
+        next.add(paperId);
+      }
+      return next;
+    });
+  }, []);
+
+  const handleBatchAnalysis = () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    batchAnalysisMutation.mutate(
+      { paperIds: ids, analysisType: "summary" },
+      {
+        onSuccess: () => {
+          setSelectedIds(new Set());
+          setBatchMode(false);
+        },
+      },
+    );
+  };
+
+  const renderTopRight = (paper: Paper) => {
+    if (batchMode) {
+      return (
+        <div
+          onClick={(e) => toggleSelect(e, paper.id)}
+          className="flex cursor-pointer items-center p-1"
+        >
+          <input
+            type="checkbox"
+            checked={selectedIds.has(paper.id)}
+            readOnly
+            className="h-4 w-4 cursor-pointer rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+            aria-label={`选择 ${paper.title}`}
+          />
+        </div>
+      );
+    }
+    return (
+      <button
+        onClick={(e) => handleDelete(e, paper)}
+        className="rounded p-1 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
+        aria-label={`删除 ${paper.title}`}
+        title="删除论文"
+      >
+        <svg
+          className="h-4 w-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+          />
+        </svg>
+      </button>
+    );
+  };
 
   return (
     <Content maxWidth="max-w-5xl">
@@ -70,7 +162,56 @@ export default function PaperListPage() {
           </svg>
           上传论文
         </button>
+        <button
+          onClick={toggleBatchMode}
+          className={`flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+            batchMode
+              ? "border-blue-300 bg-blue-50 text-blue-700"
+              : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+          }`}
+        >
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+            />
+          </svg>
+          批量操作
+        </button>
       </div>
+
+      {/* Batch action bar */}
+      {batchMode && (
+        <div className="mb-4 flex items-center justify-between rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5">
+          <span className="text-sm text-blue-700">
+            {selectedIds.size === 0
+              ? "点击卡片上的复选框选择论文"
+              : `已选择 ${selectedIds.size} 篇论文`}
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleBatchAnalysis}
+              disabled={selectedIds.size === 0 || batchAnalysisMutation.isPending}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-medium text-white transition-colors hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {batchAnalysisMutation.isPending ? "分析中..." : `AI 分析 (${selectedIds.size})`}
+            </button>
+            <button
+              onClick={toggleBatchMode}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50"
+            >
+              退出批量
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       {isLoading && !data ? (
@@ -101,7 +242,7 @@ export default function PaperListPage() {
       ) : (
         data && (
           <>
-            <PaperList papers={data.papers} />
+            <PaperList papers={data.papers} renderTopRight={renderTopRight} />
             <Pagination currentPage={page} totalPages={data.totalPages} onPageChange={setPage} />
           </>
         )

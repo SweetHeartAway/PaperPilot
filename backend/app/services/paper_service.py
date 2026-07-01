@@ -35,6 +35,14 @@ def create_paper(db: Session, paper: PaperCreate, user_id: int):
         doi=paper.doi,
         user_id=user_id,
     )
+
+    # 关联已有标签
+    if paper.tag_ids:
+        from app.models.tag import Tag
+
+        tags = db.query(Tag).filter(Tag.id.in_(paper.tag_ids)).all()
+        db_paper.tags = tags
+
     db.add(db_paper)
     db.commit()
     db.refresh(db_paper)

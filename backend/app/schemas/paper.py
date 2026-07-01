@@ -16,7 +16,7 @@ class PaperBase(BaseModel):
 
 
 class PaperCreate(PaperBase):
-    pass
+    tag_ids: list[int] = []
 
 
 class PaperUpdate(BaseModel):
