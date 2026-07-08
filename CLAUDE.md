@@ -260,11 +260,11 @@ api/ (HTTP only) → services/ (transform) → hooks/ (React Query) → pages/ (
 
 | **工程完善** | |
 |------|------|
-| Frontend Vitest | ✅ (67 tests, 10 files) |
-| Error Boundary | ✅ |
-| Loading 状态统一 | ✅ |
-| 全局异常处理（ErrorPage / getErrorMessage） | ✅ |
-| React Query 缓存策略优化 | ✅ queryKeys 工厂、缓存隔离、enabled 守卫 |
+| 前端测试覆盖率 | ✅ Vitest 67 tests / 10 files |
+| 后端测试覆盖率 | ✅ pytest 142 tests / 7 files |
+| Error Boundary / 全局异常页面 | ✅ ErrorPage + getErrorMessage |
+| Loading / Skeleton 统一 | ✅ 4 种 Skeleton 组件 |
+| React Query 缓存策略 | ✅ queryKeys 工厂、缓存隔离、enabled 守卫 |
 | 页面性能优化 | ✅ React.memo + lazy 代码分割（主 chunk -25%） |
 | UI 细节优化 | ✅ SVG 图标抽取、按钮统一、无障碍 aria-label |
 | E2E 测试 | ✅ Playwright + 3 个测试文件（auth/navigation/paper） |
@@ -278,26 +278,6 @@ api/ (HTTP only) → services/ (transform) → hooks/ (React Query) → pages/ (
 - Claude Code hooks 配置：`.claude/settings.local.json`
 
 ## 后续待完善（Roadmap）
-
-> 以下内容属于工程质量完善，已完成。
-
-### 工程质量（已完成）
-- [x] 前端组件测试（Vitest）
-- [x] Error Boundary
-- [x] 全局异常页面（404 / 500）
-- [x] Loading 统一处理
-- [x] API 错误处理统一 — getErrorMessage 统一 7 处重复逻辑
-- [x] React Query 缓存策略优化 — queryKeys 工厂、缓存隔离、enabled 守卫
-- [x] 页面性能优化 — React.memo + lazy 代码分割（主 chunk -25%）
-- [x] UI 细节优化 — SVG 图标抽取、按钮统一、无障碍 aria-label
-- [x] E2E 自动化测试 — Playwright 框架 + 3 个测试文件（auth, navigation, paper）
-- [x] 架构文档补充 — ErrorBoundary / 代码分割 / 缓存策略 / queryKeys 已补全
-- [x] 数据库 ER 图 — docs/design/ER_DIAGRAM.md（Mermaid ER 图 + 字段说明）
-- [x] 组件关系图 — docs/design/COMPONENT_MAP.md（页面/Hooks/API 完整调用链）
-
----
-
-## 推荐新增功能（Features Roadmap）
 
 > 以下为基于现有代码分析的业务功能建议，按 P0-P2 优先级排列。
 > Claude Code 在执行任务时，仅在用户明确要求的情况下完成对应内容。
@@ -317,6 +297,3 @@ api/ (HTTP only) → services/ (transform) → hooks/ (React Query) → pages/ (
 - [ ] 📊 统计面板 — 论文数/标签分布/收藏数统计
 - [ ] 🔄 CI 配置 — GitHub Actions 自动测试 + lint
 - [ ] 📋 阅读列表 / 自定义集合 — 扩展 is_favorite 为多列表
-
-所有 Roadmap 项目均按需完成，不作为当前开发阶段必须实现的内容。
-Claude Code 在执行任务时，仅在用户明确要求的情况下完成对应内容。
