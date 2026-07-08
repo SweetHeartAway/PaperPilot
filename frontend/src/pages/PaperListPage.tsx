@@ -6,6 +6,7 @@ import {
   useBatchAIAnalysis,
   useToggleFavorite,
 } from "../hooks/usePapers";
+import { useAllTags } from "../hooks/useTagManagement";
 import Content from "../layout/Content";
 import PaperList from "../components/paper/PaperList";
 import PaperCardSkeleton from "../components/paper/PaperCardSkeleton";
@@ -18,6 +19,13 @@ import type { Paper } from "../types/paper";
 
 const PAGE_SIZE = 20;
 
+const SORT_OPTIONS = [
+  { value: "updated_at", label: "更新时间" },
+  { value: "created_at", label: "创建时间" },
+  { value: "title", label: "标题" },
+  { value: "publication_date", label: "发表日期" },
+] as const;
+
 export default function PaperListPage() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
@@ -27,10 +35,15 @@ export default function PaperListPage() {
   const batchAnalysisMutation = useBatchAIAnalysis();
   const toggleFavoriteMutation = useToggleFavorite();
   const [favoriteOnly, setFavoriteOnly] = useState(false);
+  const [sortBy, setSortBy] = useState("updated_at");
+  const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
+  const [showTagDropdown, setShowTagDropdown] = useState(false);
 
   // ─── Batch mode ───
   const [batchMode, setBatchMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
+  const { data: allTags } = useAllTags();
 
   // Debounce search input + 同时重置到第 1 页
   useEffect(() => {
@@ -46,7 +59,17 @@ export default function PaperListPage() {
     pageSize: PAGE_SIZE,
     search: debouncedSearch || undefined,
     favoriteOnly,
+    sortBy,
+    sortOrder: sortBy === "title" ? "asc" : "desc",
+    tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
   });
+
+  const toggleTag = (tagId: number) => {
+    setSelectedTagIds((prev) =>
+      prev.includes(tagId) ? prev.filter((id) => id !== tagId) : [...prev, tagId],
+    );
+    setPage(1);
+  };
 
   // ─── Handlers ───
 
@@ -186,6 +209,24 @@ export default function PaperListPage() {
             </button>
           )}
         </div>
+
+        {/* 排序 */}
+        <select
+          value={sortBy}
+          onChange={(e) => {
+            setSortBy(e.target.value);
+            setPage(1);
+          }}
+          className="rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 transition-colors focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          aria-label="排序方式"
+        >
+          {SORT_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+
         <button
           onClick={() => {
             setFavoriteOnly(!favoriteOnly);
@@ -276,6 +317,41 @@ export default function PaperListPage() {
               退出批量
             </button>
           </div>
+        </div>
+      )}
+
+      {/* Tag filter */}
+      {allTags && allTags.length > 0 && (
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="text-xs font-medium text-gray-400">标签：</span>
+          {allTags.map((tag) => {
+            const isSelected = selectedTagIds.includes(tag.id);
+            return (
+              <button
+                key={tag.id}
+                onClick={() => toggleTag(tag.id)}
+                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                  isSelected
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                {tag.name}
+                {isSelected && <XIcon className="ml-1 h-3 w-3" />}
+              </button>
+            );
+          })}
+          {selectedTagIds.length > 0 && (
+            <button
+              onClick={() => {
+                setSelectedTagIds([]);
+                setPage(1);
+              }}
+              className="text-xs text-gray-400 underline transition-colors hover:text-gray-600"
+            >
+              清除筛选
+            </button>
+          )}
         </div>
       )}
 

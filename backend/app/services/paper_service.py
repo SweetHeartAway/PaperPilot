@@ -57,12 +57,20 @@ def get_papers(
     limit: int = 100,
     search: str | None = None,
     favorite_only: bool = False,
+    sort_by: str = "updated_at",
+    sort_order: str = "desc",
+    tag_ids: list[int] | None = None,
 ):
-    """获取用户论文列表（支持搜索、分页和收藏筛选）"""
+    """获取用户论文列表（支持搜索、分页、收藏筛选、排序、标签筛选）"""
     query = db.query(Paper).filter(Paper.user_id == user_id)
 
     if favorite_only:
         query = query.filter(Paper.is_favorite)
+
+    if tag_ids:
+        from app.models.tag import Tag
+
+        query = query.filter(Paper.tags.any(Tag.id.in_(tag_ids)))
 
     if search:
         like = f"%{search}%"
@@ -76,12 +84,23 @@ def get_papers(
         )
 
     total = query.count()
+
+    # 排序
+    allowed_sort_columns = {
+        "updated_at": Paper.updated_at,
+        "created_at": Paper.created_at,
+        "title": Paper.title,
+        "publication_date": Paper.publication_date,
+        "is_favorite": Paper.is_favorite,
+    }
+    sort_column = allowed_sort_columns.get(sort_by, Paper.updated_at)
+    order_fn = getattr(
+        sort_column,
+        sort_order.lower() if sort_order.lower() in ("asc", "desc") else "desc",
+    )
+
     papers = (
-        query.options(selectinload(Paper.tags))
-        .order_by(Paper.updated_at.desc())
-        .offset(skip)
-        .limit(limit)
-        .all()
+        query.options(selectinload(Paper.tags)).order_by(order_fn()).offset(skip).limit(limit).all()
     )
     return papers, total
 

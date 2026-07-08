@@ -7,6 +7,9 @@ export function fetchPaperList(params: {
   limit: number;
   search?: string;
   favorite_only?: boolean;
+  sort_by?: string;
+  sort_order?: string;
+  tag_ids?: string;
 }): Promise<PaperListResponse> {
   return client.get("/api/v1/papers/", { params }).then((res) => res.data);
 }

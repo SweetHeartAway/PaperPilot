@@ -11,6 +11,9 @@ export interface PaperListQuery {
   pageSize: number;
   search?: string;
   favoriteOnly?: boolean;
+  sortBy?: string;
+  sortOrder?: string;
+  tagIds?: number[];
 }
 
 export interface PaperListData {
@@ -20,13 +23,16 @@ export interface PaperListData {
 }
 
 export async function getPaperList(query: PaperListQuery): Promise<PaperListData> {
-  const { page, pageSize, search, favoriteOnly } = query;
+  const { page, pageSize, search, favoriteOnly, sortBy, sortOrder, tagIds } = query;
   const skip = (page - 1) * pageSize;
   const response = await apiFetchPaperList({
     skip,
     limit: pageSize,
     search,
     favorite_only: favoriteOnly,
+    sort_by: sortBy,
+    sort_order: sortOrder,
+    tag_ids: tagIds && tagIds.length > 0 ? tagIds.join(",") : undefined,
   });
   return {
     papers: response.items,

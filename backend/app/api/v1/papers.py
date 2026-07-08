@@ -58,10 +58,23 @@ def read_papers(
     limit: int = 100,
     search: str | None = Query(None, description="搜索关键词（标题/作者/摘要/DOI）"),
     favorite_only: bool = Query(False, description="仅显示收藏的论文"),
+    sort_by: str = Query(
+        "updated_at",
+        description="排序字段（updated_at/created_at/title/publication_date/is_favorite）",
+    ),
+    sort_order: str = Query("desc", description="排序方向（asc/desc）"),
+    tag_ids: str | None = Query(None, description="标签 ID 列表（逗号分隔，如 1,2,3）"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """获取论文列表（支持搜索、分页和收藏筛选）"""
+    """获取论文列表（支持搜索、分页、排序、标签筛选、收藏筛选）"""
+    parsed_tag_ids: list[int] | None = None
+    if tag_ids:
+        try:
+            parsed_tag_ids = [int(x.strip()) for x in tag_ids.split(",") if x.strip()]
+        except ValueError:
+            raise HTTPException(status_code=422, detail="tag_ids 参数格式无效")
+
     papers, total = get_papers(
         db,
         user_id=current_user.id,
@@ -69,6 +82,9 @@ def read_papers(
         limit=limit,
         search=search,
         favorite_only=favorite_only,
+        sort_by=sort_by,
+        sort_order=sort_order,
+        tag_ids=parsed_tag_ids,
     )
     return PaperListResponse(items=papers, total=total)
 
