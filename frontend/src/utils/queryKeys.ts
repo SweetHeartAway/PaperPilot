@@ -3,7 +3,7 @@ export const queryKeys = {
   papers: {
     all: ["papers"] as const,
     lists: () => ["papers", "list"] as const,
-    list: (params: { page: number; pageSize: number; search?: string }) =>
+    list: (params: { page: number; pageSize: number; search?: string; favoriteOnly?: boolean }) =>
       ["papers", "list", params] as const,
     details: () => ["papers", "detail"] as const,
     detail: (id: number) => ["papers", "detail", id] as const,

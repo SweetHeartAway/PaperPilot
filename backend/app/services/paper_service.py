@@ -34,6 +34,7 @@ def create_paper(db: Session, paper: PaperCreate, user_id: int):
         publication_date=paper.publication_date,
         doi=paper.doi,
         user_id=user_id,
+        is_favorite=paper.is_favorite,
     )
 
     # 关联已有标签
@@ -55,9 +56,13 @@ def get_papers(
     skip: int = 0,
     limit: int = 100,
     search: str | None = None,
+    favorite_only: bool = False,
 ):
-    """获取用户论文列表（支持搜索和分页）"""
+    """获取用户论文列表（支持搜索、分页和收藏筛选）"""
     query = db.query(Paper).filter(Paper.user_id == user_id)
+
+    if favorite_only:
+        query = query.filter(Paper.is_favorite)
 
     if search:
         like = f"%{search}%"
@@ -104,6 +109,17 @@ def update_paper(db: Session, paper_id: int, paper: PaperUpdate, user_id: int):
     for key, value in update_data.items():
         setattr(db_paper, key, value)
 
+    db.commit()
+    db.refresh(db_paper)
+    return db_paper
+
+
+def toggle_favorite(db: Session, paper_id: int, user_id: int) -> Paper | None:
+    """切换论文收藏状态"""
+    db_paper = db.query(Paper).filter(Paper.id == paper_id, Paper.user_id == user_id).first()
+    if not db_paper:
+        return None
+    db_paper.is_favorite = not db_paper.is_favorite
     db.commit()
     db.refresh(db_paper)
     return db_paper

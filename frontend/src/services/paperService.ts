@@ -10,6 +10,7 @@ export interface PaperListQuery {
   page: number;
   pageSize: number;
   search?: string;
+  favoriteOnly?: boolean;
 }
 
 export interface PaperListData {
@@ -19,9 +20,14 @@ export interface PaperListData {
 }
 
 export async function getPaperList(query: PaperListQuery): Promise<PaperListData> {
-  const { page, pageSize, search } = query;
+  const { page, pageSize, search, favoriteOnly } = query;
   const skip = (page - 1) * pageSize;
-  const response = await apiFetchPaperList({ skip, limit: pageSize, search });
+  const response = await apiFetchPaperList({
+    skip,
+    limit: pageSize,
+    search,
+    favorite_only: favoriteOnly,
+  });
   return {
     papers: response.items,
     total: response.total,

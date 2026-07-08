@@ -1,6 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { getPaperList, type PaperListQuery } from "../services/paperService";
-import { fetchPaper, updatePaper, deletePaper, deletePaperFile } from "../api/papers";
+import {
+  fetchPaper,
+  updatePaper,
+  deletePaper,
+  deletePaperFile,
+  toggleFavorite,
+} from "../api/papers";
 import {
   fetchPaperAISummary,
   triggerPaperAISummary,
@@ -20,6 +26,7 @@ export function usePaperList(query: PaperListQuery) {
       page: query.page,
       pageSize: query.pageSize,
       search: query.search,
+      favoriteOnly: query.favoriteOnly,
     }),
     queryFn: () => getPaperList(query),
     placeholderData: (previousData) => previousData,
@@ -158,6 +165,27 @@ export function useDeletePaperFile(paperId: number) {
     },
     onError: (err) => {
       toast.error(getErrorMessage(err, "删除文件失败"));
+    },
+  });
+}
+
+// ─── Toggle Favorite ───
+
+export function useToggleFavorite(paperId?: number) {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+  return useMutation({
+    mutationFn: () => toggleFavorite(paperId!),
+    onSuccess: (updatedPaper) => {
+      // 更新详情页缓存
+      if (paperId) {
+        queryClient.setQueryData(queryKeys.papers.detail(paperId), updatedPaper);
+      }
+      // 刷新列表缓存
+      queryClient.invalidateQueries({ queryKey: queryKeys.papers.lists() });
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "收藏操作失败"));
     },
   });
 }

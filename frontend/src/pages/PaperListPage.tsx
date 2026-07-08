@@ -1,6 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { usePaperList, useDeletePaper, useBatchAIAnalysis } from "../hooks/usePapers";
+import {
+  usePaperList,
+  useDeletePaper,
+  useBatchAIAnalysis,
+  useToggleFavorite,
+} from "../hooks/usePapers";
 import Content from "../layout/Content";
 import PaperList from "../components/paper/PaperList";
 import PaperCardSkeleton from "../components/paper/PaperCardSkeleton";
@@ -20,6 +25,8 @@ export default function PaperListPage() {
   const [page, setPage] = useState(1);
   const deleteMutation = useDeletePaper();
   const batchAnalysisMutation = useBatchAIAnalysis();
+  const toggleFavoriteMutation = useToggleFavorite();
+  const [favoriteOnly, setFavoriteOnly] = useState(false);
 
   // ─── Batch mode ───
   const [batchMode, setBatchMode] = useState(false);
@@ -38,6 +45,7 @@ export default function PaperListPage() {
     page,
     pageSize: PAGE_SIZE,
     search: debouncedSearch || undefined,
+    favoriteOnly,
   });
 
   // ─── Handlers ───
@@ -102,26 +110,57 @@ export default function PaperListPage() {
       );
     }
     return (
-      <button
-        onClick={(e) => handleDelete(e, paper)}
-        className="rounded p-1 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
-        aria-label={`删除 ${paper.title}`}
-        title="删除论文"
-      >
-        <svg
-          className="h-4 w-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
+      <>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            toggleFavoriteMutation.mutate(paper.id);
+          }}
+          className={`rounded p-1 transition-colors ${
+            paper.is_favorite
+              ? "text-yellow-500 hover:text-yellow-600"
+              : "text-gray-400 hover:text-yellow-500"
+          }`}
+          aria-label={paper.is_favorite ? "取消收藏" : "收藏"}
+          title={paper.is_favorite ? "取消收藏" : "收藏"}
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-          />
-        </svg>
-      </button>
+          <svg
+            className="h-4 w-4"
+            viewBox="0 0 24 24"
+            fill={paper.is_favorite ? "currentColor" : "none"}
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden="true"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
+            />
+          </svg>
+        </button>
+        <button
+          onClick={(e) => handleDelete(e, paper)}
+          className="rounded p-1 text-gray-400 transition-colors hover:bg-red-50 hover:text-red-500"
+          aria-label={`删除 ${paper.title}`}
+          title="删除论文"
+        >
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+            />
+          </svg>
+        </button>
+      </>
     );
   };
 
@@ -147,6 +186,33 @@ export default function PaperListPage() {
             </button>
           )}
         </div>
+        <button
+          onClick={() => {
+            setFavoriteOnly(!favoriteOnly);
+            setPage(1);
+          }}
+          className={`flex items-center gap-1.5 rounded-lg border px-4 py-2 text-sm font-medium transition-colors ${
+            favoriteOnly
+              ? "border-yellow-300 bg-yellow-50 text-yellow-700"
+              : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+          }`}
+          title={favoriteOnly ? "显示全部论文" : "仅显示收藏论文"}
+        >
+          <svg
+            className={`h-4 w-4 ${favoriteOnly ? "fill-yellow-500 text-yellow-500" : ""}`}
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
+            />
+          </svg>
+          {favoriteOnly ? "收藏" : "收藏"}
+        </button>
         <button
           onClick={() => navigate("/papers/create")}
           className="flex items-center gap-1.5 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-700"

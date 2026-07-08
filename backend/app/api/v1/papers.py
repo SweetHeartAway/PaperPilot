@@ -31,6 +31,7 @@ from app.services.paper_service import (
     delete_paper,
     get_paper,
     get_papers,
+    toggle_favorite,
     update_paper,
 )
 
@@ -55,11 +56,19 @@ def read_papers(
     skip: int = 0,
     limit: int = 100,
     search: str | None = Query(None, description="搜索关键词（标题/作者/摘要/DOI）"),
+    favorite_only: bool = Query(False, description="仅显示收藏的论文"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """获取论文列表（支持搜索和分页）"""
-    papers, total = get_papers(db, user_id=current_user.id, skip=skip, limit=limit, search=search)
+    """获取论文列表（支持搜索、分页和收藏筛选）"""
+    papers, total = get_papers(
+        db,
+        user_id=current_user.id,
+        skip=skip,
+        limit=limit,
+        search=search,
+        favorite_only=favorite_only,
+    )
     return PaperListResponse(items=papers, total=total)
 
 
@@ -193,6 +202,22 @@ def remove_tag_from_paper(
             status_code = status.HTTP_404_NOT_FOUND
         raise HTTPException(status_code=status_code, detail=detail)
     return None
+
+
+# ─── Favorite — 收藏 ─────────────────────────────────────────
+
+
+@router.post("/{paper_id}/favorite/toggle", response_model=Paper)
+def toggle_paper_favorite(
+    paper_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """切换论文收藏状态"""
+    paper = toggle_favorite(db, paper_id=paper_id, user_id=current_user.id)
+    if paper is None:
+        raise HTTPException(status_code=404, detail="论文不存在")
+    return paper
 
 
 # ─── AI Summary — 批量分析 ──────────────────────────────────

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { formatDate, formatFileSize } from "../../utils/format";
 import type { Paper } from "../../types/paper";
 
@@ -13,6 +14,8 @@ interface PaperInfoProps {
   paper: Paper;
   /** 论文文件下载 URL（需由父层拼接，避免组件直接引用 api/） */
   downloadUrl?: string;
+  /** 标题右侧操作区插槽（收藏按钮等） */
+  titleActions?: ReactNode;
   // ─── Edit mode ───
   editing?: boolean;
   editForm?: PaperEditForm;
@@ -32,6 +35,7 @@ interface PaperInfoProps {
 export default function PaperInfo({
   paper,
   downloadUrl,
+  titleActions,
   editing,
   editForm,
   onEditFormChange,
@@ -50,13 +54,16 @@ export default function PaperInfo({
       <div>
         <div className="flex items-start justify-between gap-4">
           <h1 className="text-xl font-semibold text-gray-900">{paper.title}</h1>
-          <button
-            onClick={onStartEdit}
-            className="flex-shrink-0 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50"
-            aria-label="编辑论文"
-          >
-            编辑
-          </button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {titleActions}
+            <button
+              onClick={onStartEdit}
+              className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50"
+              aria-label="编辑论文"
+            >
+              编辑
+            </button>
+          </div>
         </div>
 
         {paper.authors && <p className="mt-2 text-sm text-gray-600">{paper.authors}</p>}

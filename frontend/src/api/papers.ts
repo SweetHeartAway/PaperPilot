@@ -6,6 +6,7 @@ export function fetchPaperList(params: {
   skip: number;
   limit: number;
   search?: string;
+  favorite_only?: boolean;
 }): Promise<PaperListResponse> {
   return client.get("/api/v1/papers/", { params }).then((res) => res.data);
 }
@@ -86,4 +87,9 @@ export function uploadPaperFile(
       },
     })
     .then((res) => res.data);
+}
+
+/** 切换论文收藏状态 */
+export function toggleFavorite(paperId: number): Promise<Paper> {
+  return client.post(`/api/v1/papers/${paperId}/favorite/toggle`).then((res) => res.data);
 }
