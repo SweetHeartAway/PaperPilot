@@ -1,6 +1,6 @@
 # PaperPilot 前端组件关系图
 
-> 生成日期：2026-07-01
+> 生成日期：2026-07-08
 
 ## 路由树
 
@@ -52,15 +52,19 @@ RegisterPage -> useRegister() -> registerApi() -> POST /api/v1/auth/register
 ### PaperListPage
 
 ```
-PaperListPage -> usePaperList() -> paperService.getPaperList() -> fetchPaperList() -> GET /api/v1/papers/
+PaperListPage -> useAllTags() -> tagService.fetchTags() -> fetchTags() -> GET /api/v1/tags/
+             -> usePaperList() -> paperService.getPaperList() -> fetchPaperList() -> GET /api/v1/papers/
+             -> useToggleFavorite() -> toggleFavorite() -> POST /api/v1/papers/:id/favorite/toggle
              -> useDeletePaper() -> deletePaper() -> DELETE /api/v1/papers/:id
              -> useBatchAIAnalysis() -> batchTriggerAIAnalysis() -> POST /api/v1/papers/batch/ai-summary
-  State: batchMode, selectedIds (Set)
-  Component: PaperList -> PaperCard (memo) -> formatDate(), renderTopRight slot (删除复选框)
+  State: batchMode, selectedIds (Set), favoriteOnly, sortBy, selectedTagIds
+  Component: PaperList -> PaperCard (memo) -> formatDate(), renderTopRight slot (星标按钮 + 删除按钮)
   UI: PaperCardSkeleton -> Skeleton
   UI: EmptyState, ErrorState -> WarningIcon
   UI: Pagination
   UI: XIcon (搜索清除按钮)
+  UI: Sort dropdown (更新时间/创建时间/标题/发表日期)
+  UI: Tag filter chips (多选)
   Util: getErrorMessage()
 ```
 
@@ -82,6 +86,7 @@ PaperCreatePage -> useCreatePaper() -> createPaper() -> POST /api/v1/papers/ (�
 
 ```
 PaperDetailPage -> usePaper() -> fetchPaper() -> GET /api/v1/papers/:id
+             -> useToggleFavorite() -> toggleFavorite() -> POST /api/v1/papers/:id/favorite/toggle
              -> usePaperAISummary() -> fetchPaperAISummary() -> GET /api/v1/papers/:id/ai-summary
              -> useTriggerAIAnalysis() -> POST /api/v1/papers/:id/ai-summary (含 forceRegenerate)
              -> useUpdatePaper() -> updatePaper() -> PUT /api/v1/papers/:id
@@ -94,7 +99,8 @@ PaperDetailPage -> usePaper() -> fetchPaper() -> GET /api/v1/papers/:id
              -> fetchPaperFileBlob() -> GET /api/v1/papers/:id/download (responseType: blob)
              -> usePaperChat() -> askPaperQuestion() -> POST /api/v1/papers/:id/chat
   State: isEditing, editForm, showHistory, selectedVersion, diffVersions, pdfData/pdfLoading/pdfError/pdfVisible
-  Component: PaperInfo -> formatDate(), formatFileSize() + 编辑模式/删除按钮/文件删除
+  Component: PaperInfo -> formatDate(), formatFileSize() + 编辑模式/删除按钮/文件删除/引用导出(BibTeX/RIS)
+                         + titleActions(收藏按钮)
   Component: AISummaryPanel -> Skeleton, Spinner, TabBar, TabBar/TriggerButton/VersionHistory/DiffView
   Component: PDFViewer -> pdfjs-dist 页面渲染(翻页/缩放/Canvas)
   Component: ChatPanel -> 基于 RAG 的论文对话（消息列表 + 输入框 + 来源引用）

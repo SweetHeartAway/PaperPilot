@@ -4,7 +4,8 @@
 
 - 本项目用于：AI 论文管理平台（PaperPilot），帮助研究人员管理和分析学术论文
 - 主要用户和场景：研究人员、学生、学术用户，需要管理论文库、上传 PDF、自动生成摘要和关键词
-- 当前阶段：后端全部完成（33 个 API 端点、59 个测试通过），前端 10 个核心页面 + PDF 内联查看器已实现（Paper List、Paper Create、Paper Detail、Login/Register、Tags、Prompts、Profile、ErrorPage、NotFoundPage）
+- 当前阶段：后端 34+ 个 API 端点、142 个测试通过，前端 10 个核心页面 + PDF 内联查看器已实现
+- P0 功能已完成：论文收藏（Star 切换）、BibTeX/RIS 引用导出、列表排序 + 标签筛选
 - 暂时不做：全文搜索、团队协作/多用户共享、Celery 异步任务、移动端适配、第三方登录（OAuth）
 
 ## 工作方式
@@ -220,11 +221,15 @@ api/ (HTTP only) → services/ (transform) → hooks/ (React Query) → pages/ (
 | 多模型切换（DeepSeek/GLM/OpenAI/Ollama） | ✅ |
 | Embedding + Chroma 向量存储 | ✅ |
 | PDF 文本提取 | ✅ |
-| 后端测试覆盖率（59 个测试） | ✅ |
+| Chat（基于 RAG 的论文对话） | ✅ |
+| 论文收藏（is_favorite toggle） | ✅ |
+| BibTeX/RIS 引用导出 | ✅ |
+| 论文列表排序 + 标签筛选 | ✅ |
+| 后端测试覆盖率（142 个测试） | ✅ |
 | **前端** | |
 | Layout 系统（Header/Sidebar/Content/Footer） | ✅ |
 | 路由守卫（ProtectedRoute） | ✅ |
-| 论文列表页（分页/搜索/Skeleton 加载/批量操作） | ✅ |
+| 论文列表页（分页/搜索/排序/标签筛选/批量操作/收藏） | ✅ |
 | 论文上传页（拖拽/进度/重试/标签选择/日期） | ✅ |
 | 论文详情页（信息/AI 分析/Tag 三区布局） | ✅ |
 | 论文编辑（行内编辑模式） | ✅ |
@@ -242,6 +247,10 @@ api/ (HTTP only) → services/ (transform) → hooks/ (React Query) → pages/ (
 | 标签管理页面（创建/行内编辑/删除确认） | ✅ |
 | 个人中心页面（ProfileForm/useUser hook） | ✅ |
 | 论文创建支持发表日期和标签选择 | ✅ |
+| 论文收藏（列表星标 + 详情星标 + 筛选） | ✅ |
+| BibTeX/RIS 引用导出按钮 | ✅ |
+| 论文列表排序下拉 + 标签筛选 chips | ✅ |
+| Chat 论文对话面板 | ✅ |
 
 | **文档** | |
 | API 文档 | ✅ 已更新 |
@@ -251,7 +260,7 @@ api/ (HTTP only) → services/ (transform) → hooks/ (React Query) → pages/ (
 
 | **工程完善** | |
 |------|------|
-| Frontend Vitest | ✅ (48 tests, 7 files) |
+| Frontend Vitest | ✅ (67 tests, 10 files) |
 | Error Boundary | ✅ |
 | Loading 状态统一 | ✅ |
 | 全局异常处理（ErrorPage / getErrorMessage） | ✅ |
@@ -270,30 +279,44 @@ api/ (HTTP only) → services/ (transform) → hooks/ (React Query) → pages/ (
 
 ## 后续待完善（Roadmap）
 
-> 以下内容属于工程质量完善，不属于新增业务功能。
-### 第一优先级
+> 以下内容属于工程质量完善，已完成。
+
+### 工程质量（已完成）
 - [x] 前端组件测试（Vitest）
 - [x] Error Boundary
 - [x] 全局异常页面（404 / 500）
 - [x] Loading 统一处理
-
----
-
-### 第二优先级
 - [x] API 错误处理统一 — getErrorMessage 统一 7 处重复逻辑
 - [x] React Query 缓存策略优化 — queryKeys 工厂、缓存隔离、enabled 守卫
 - [x] 页面性能优化 — React.memo + lazy 代码分割（主 chunk -25%）
 - [x] UI 细节优化 — SVG 图标抽取、按钮统一、无障碍 aria-label
-
----
-
-### 第三优先级
 - [x] E2E 自动化测试 — Playwright 框架 + 3 个测试文件（auth, navigation, paper）
 - [x] 架构文档补充 — ErrorBoundary / 代码分割 / 缓存策略 / queryKeys 已补全
 - [x] 数据库 ER 图 — docs/design/ER_DIAGRAM.md（Mermaid ER 图 + 字段说明）
 - [x] 组件关系图 — docs/design/COMPONENT_MAP.md（页面/Hooks/API 完整调用链）
 
 ---
+
+## 推荐新增功能（Features Roadmap）
+
+> 以下为基于现有代码分析的业务功能建议，按 P0-P2 优先级排列。
+> Claude Code 在执行任务时，仅在用户明确要求的情况下完成对应内容。
+
+### P0（高价值低投入，已全部完成 ✅）
+- [x] ⭐ 论文收藏功能 — 利用已有 `is_favorite` 字段，前后端完整交互
+- [x] 📄 BibTeX/RIS 引用导出 — 独立 `export_service.py`，支持两种学术引用格式
+- [x] 🔍 论文列表排序 + 标签筛选 — 排序下拉（时间/标题/日期）+ 标签 chips 多选
+
+### P1（实用功能，待实现 ⏳）
+- [ ] 🗑️ 批量删除 / 批量打标签 — 利用现有批量模式 UI 框架，后端加批量端点和前端加按钮
+- [ ] 📚 Chat 面板展示引用来源 — 后端 `ChatResponse.sources` 已返回，前端未展示来源卡片
+- [ ] 🔗 DOI 自动补全 — 调用 CrossRef API 自动拉取论文元数据，减少手动录入
+- [ ] 🐳 Docker 容器化 — 前端 Nginx + 后端 Gunicorn + docker-compose.yml
+
+### P2（锦上添花，待实现 ⏳）
+- [ ] 📊 统计面板 — 论文数/标签分布/收藏数统计
+- [ ] 🔄 CI 配置 — GitHub Actions 自动测试 + lint
+- [ ] 📋 阅读列表 / 自定义集合 — 扩展 is_favorite 为多列表
 
 所有 Roadmap 项目均按需完成，不作为当前开发阶段必须实现的内容。
 Claude Code 在执行任务时，仅在用户明确要求的情况下完成对应内容。

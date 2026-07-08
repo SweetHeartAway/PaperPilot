@@ -25,10 +25,9 @@ Authorization: Bearer <token>
 | 模块 | 路径 | 说明 |
 |------|------|------|
 | Auth | `/api/v1/auth/` | 注册、登录 |
-| Papers | `/api/v1/papers/` | 论文 CRUD、PDF 上传/下载、标签管理、AI 分析 |
+| Papers | `/api/v1/papers/` | 论文 CRUD、PDF 上传/下载、标签管理、AI 分析、收藏、引用导出、Chat |
 | Tags | `/api/v1/tags/` | 标签 CRUD |
-| Users | `/api/v1/users/` | 用户信息 |
-| AI | `/api/v1/ai/` | 通用 AI 分析（遗留接口） |
+| Users | `/api/v1/users/` | 用户信息（含头像/密码修改/AI 偏好） |
 | Prompts | `/api/v1/prompts/` | 自定义 Prompt 模板 CRUD |
 
 ## 端点列表

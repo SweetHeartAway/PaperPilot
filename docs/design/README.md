@@ -1,6 +1,6 @@
 # PaperPilot 架构分析
 
-> 生成日期：2026-07-01
+> 生成日期：2026-07-08
 > 基于项目 commit b416b0e（master 分支）
 
 ---
@@ -61,16 +61,17 @@ backend/
 │   ├── core/             # 配置（config.py）、依赖（dependencies.py）
 │   ├── models/           # 4 个 SQLAlchemy 模型（User, Paper, Tag, AIAnalysis, PromptTemplate）
 │   ├── schemas/          # Pydantic v2 请求/响应模型
-│   ├── services/         # 9 个业务逻辑模块
+│   ├── services/         # 10 个业务逻辑模块
 │   │   ├── paper_service.py
-│   │   ├── ai_service.py (旧版)
-│   │   ├── ai_summary_service.py (新版, 最复杂)
+│   │   ├── ai_summary_service.py (与 AI 分析相关逻辑)
 │   │   ├── ai_utils.py (文本提取/提示词格式化)
 │   │   ├── file_service.py (文件上传/下载/删除)
 │   │   ├── tag_service.py
 │   │   ├── user_service.py
 │   │   ├── prompt_service.py
-│   │   └── embedding_service.py
+│   │   ├── embedding_service.py
+│   │   ├── indexing_service.py (向量索引管理)
+│   │   └── export_service.py (BibTeX/RIS 引用导出)
 │   ├── repositories/     # 向量存储仓库模式
 │   │   ├── vector.py (ABC)
 │   │   └── vector_chroma.py (Chroma 实现)
@@ -81,7 +82,7 @@ backend/
 │       ├── pdf_extractor.py
 │       └── database.py
 ├── alembic/versions/     # 数据库迁移
-├── tests/                # 59 个测试
+├── tests/                # 142 个测试
 └── main.py               # 应用入口
 ```
 
@@ -101,12 +102,13 @@ frontend/src/
 │   ├── paper/        # 7 个论文领域组件（PaperCard, PaperList, PaperCardSkeleton, PaperInfo, AISummaryPanel, PDFViewer, TagManager）
 │   ├── auth/         # 1 个认证组件（ProtectedRoute）
 │   └── user/         # 2 个用户组件（ProfileForm, ProfileSkeleton）
-├── hooks/            # React Query 封装
+├── hooks/            # React Query 封装 + 自定义 hooks
 │   ├── usePapers.ts
 │   ├── useTags.ts
 │   ├── useTagManagement.ts
 │   ├── usePrompts.ts
 │   ├── useCreatePaper.ts
+│   ├── usePaperChat.ts
 │   ├── useAuth.ts
 │   ├── useUser.ts
 │   └── useToast.ts
@@ -141,10 +143,9 @@ frontend/src/
 | 模块 | 前缀 | 端点 | 认证 | 说明 |
 |------|------|------|------|------|
 | `auth.py` | `/api/v1/auth` | 2 | 无 | 注册、登录 |
-| `users.py` | `/api/v1/users` | 2 | 全部 | 当前用户、用户查询 |
-| `papers.py` | `/api/v1/papers` | 13 | 全部 | 论文 CRUD + PDF + 标签 + AI 分析（含版本/批量） |
+| `users.py` | `/api/v1/users` | 7 | 全部 | 当前用户、用户查询、更新资料、修改密码、头像上传/删除/获取 |
+| `papers.py` | `/api/v1/papers` | 16+ | 全部 | 论文 CRUD + PDF + 标签 + AI 分析 + 收藏 + Chat + 引用导出（含版本/批量）|
 | `tags.py` | `/api/v1/tags` | 5 | 全部 | 标签 CRUD |
-| `ai.py` | `/api/v1/ai` | 3 | 全部 | 旧版 AI 接口（遗留） |
 | `prompts.py` | `/api/v1/prompts` | 6 | 全部 | 自定义 Prompt 模板 |
 
 ### 2.2 核心数据模型关系
@@ -233,13 +234,17 @@ except ValueError as e:
 
 ```
 PaperListPage
-  ├── useState: searchQuery, debouncedSearch, page
-  ├── usePaperList({ page, pageSize, search })
-  │     └── useQuery(["papers", "list", page, pageSize, search])
+  ├── useState: searchQuery, debouncedSearch, page, sortBy, favoriteOnly, selectedTagIds, batchMode
+  ├── useAllTags()                         ← 获取所有标签用于筛选
+  ├── usePaperList({ page, pageSize, search, favoriteOnly, sortBy, tagIds })
+  │     └── useQuery(["papers", "list", params])
   │           └── paperService.getPaperList(query)
-  │                 └── fetchPaperList({ skip, limit, search })
+  │                 └── fetchPaperList({ skip, limit, search, favorite_only, sort_by, tag_ids })
   │                       └── axios.get("/api/v1/papers/")
   │
+  ├── useToggleFavorite()                 ← 收藏切换
+  ├── useDeletePaper()                    ← 删除
+  ├── useBatchAIAnalysis()               ← 批量 AI
   ├── PaperList(papers)                    ← 纯渲染
   ├── PaperCardSkeleton(count)             ← Loading 态
   ├── EmptyState(title, message, action?)  ← Empty 态
@@ -382,8 +387,8 @@ export async function getPaperList(query: PaperListQuery) {
 ### 6.1 后端测试
 
 - 测试框架：pytest + FastAPI TestClient
-- 测试文件：4 个（`test_auth.py`, `test_papers.py`, `test_tags.py`, `test_users.py`）
-- 测试数量：59 个
+- 测试文件：7 个（`test_auth.py`, `test_papers.py`, `test_tags.py`, `test_users.py`, `test_ai_summary.py`, `test_prompts.py`, `test_chat.py`）
+- 测试数量：142 个
 - 策略：每个测试函数独立数据库（`scope="function"` + `create_all/drop_all`），覆盖正常路径 + 边界条件
 
 ### 6.2 前端测试
@@ -391,7 +396,7 @@ export async function getPaperList(query: PaperListQuery) {
 - 测试框架：Vitest + @testing-library/react + jsdom
 - 配置文件：`vitest.config.ts`，使用 jsdom 环境
 - 全局设置：`src/test/setup.ts`，扩展 `@testing-library/jest-dom` matchers
-- 测试文件：7 个，共 48 个测试
+- 测试文件：10 个，共 67 个测试
 
 | 测试文件 | 类型 | 说明 |
 |---------|------|------|
@@ -402,6 +407,9 @@ export async function getPaperList(query: PaperListQuery) {
 | `components/ui/ErrorState.test.tsx` | UI 组件 | `render()` + `screen.getByText` 查询 |
 | `components/ui/Spinner.test.tsx` | UI 组件 | `render()` + `screen.getByText` 查询 |
 | `components/ui/Pagination.test.tsx` | UI 组件 | `render()` + `screen.getByText` 查询 |
+| `hooks/useAuth.test.tsx` | Hook | `renderHook` + mock API |
+| `hooks/useUser.test.tsx` | Hook | `renderHook` + mock API + mock store |
+| `hooks/useTags.test.tsx` | Hook | `renderHook` + mock API |
 
 #### 测试策略
 
@@ -561,14 +569,17 @@ POST   /api/v1/papers/                # 创建论文
 GET    /api/v1/papers/{paper_id}      # 论文详情
 PUT    /api/v1/papers/{paper_id}      # 更新论文
 DELETE /api/v1/papers/{paper_id}      # 删除论文
-POST   /api/v1/papers/{paper_id}/upload     # 上传 PDF
-GET    /api/v1/papers/{paper_id}/download   # 下载 PDF
-DELETE /api/v1/papers/{paper_id}/file       # 删除文件
-POST   /api/v1/papers/{paper_id}/tags       # 添加标签
-DELETE /api/v1/papers/{paper_id}/tags/{tag_id}  # 移除标签
-POST   /api/v1/papers/batch/ai-summary      # 批量 AI 分析
-GET    /api/v1/papers/{paper_id}/ai-summary     # 获取 AI 分析
-POST   /api/v1/papers/{paper_id}/ai-summary     # 触发 AI 分析
+POST   /api/v1/papers/{paper_id}/upload            # 上传 PDF
+GET    /api/v1/papers/{paper_id}/download          # 下载 PDF
+DELETE /api/v1/papers/{paper_id}/file              # 删除文件
+POST   /api/v1/papers/{paper_id}/tags              # 添加标签
+DELETE /api/v1/papers/{paper_id}/tags/{tag_id}     # 移除标签
+POST   /api/v1/papers/{paper_id}/favorite/toggle   # 切换收藏
+GET    /api/v1/papers/{paper_id}/export            # 引用导出（?format=bibtex|ris）
+POST   /api/v1/papers/{paper_id}/chat              # 论文对话（RAG）
+POST   /api/v1/papers/batch/ai-summary             # 批量 AI 分析
+GET    /api/v1/papers/{paper_id}/ai-summary        # 获取 AI 分析
+POST   /api/v1/papers/{paper_id}/ai-summary        # 触发 AI 分析
 GET    /api/v1/papers/{paper_id}/ai-summary/versions      # 版本列表
 GET    /api/v1/papers/{paper_id}/ai-summary/versions/diff # 版本对比
 
@@ -579,11 +590,12 @@ PUT    /api/v1/tags/{tag_id}          # 更新标签
 DELETE /api/v1/tags/{tag_id}          # 删除标签
 
 GET    /api/v1/users/me               # 当前用户
+PUT    /api/v1/users/me               # 更新用户资料
+POST   /api/v1/users/me/change-password  # 修改密码
+POST   /api/v1/users/me/avatar        # 上传头像
+DELETE /api/v1/users/me/avatar        # 删除头像
+GET    /api/v1/users/{user_id}/avatar # 获取头像文件
 GET    /api/v1/users/{user_id}        # 用户查询
-
-POST   /api/v1/ai/analyze             # 旧版: AI 分析
-POST   /api/v1/ai/summarize           # 旧版: AI 摘要
-POST   /api/v1/ai/recommend           # 旧版: AI 推荐
 
 GET    /api/v1/prompts/               # Prompt 模板列表
 POST   /api/v1/prompts/               # 创建模板
@@ -603,8 +615,8 @@ PageStatus: "form" → "creating" → "uploading" → "success" → navigate /pa
 
 ### C. 测试覆盖
 
-- 后端：59 个测试，4 个测试文件（auth, papers, tags, users）
-- 前端：48 个测试，7 个测试文件（format, token, toastStore, EmptyState, ErrorState, Spinner, Pagination）
+- 后端：142 个测试，7 个测试文件（auth, papers, tags, users, ai_summary, prompts, chat）
+- 前端：67 个测试，10 个测试文件（format, token, toastStore, EmptyState, ErrorState, Spinner, Pagination, useAuth, useUser, useTags）
 - 后端测试框架：pytest + FastAPI TestClient + 独立数据库 per function
 - 前端测试框架：Vitest + @testing-library/react + jsdom
 
