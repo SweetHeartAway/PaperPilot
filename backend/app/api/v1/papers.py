@@ -1,7 +1,7 @@
 """论文路由 — CRUD、PDF 上传/下载/删除、AI Summary、版本对比、批量分析"""
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, PlainTextResponse
 from sqlalchemy.orm import Session
 
 from app.core.dependencies import get_current_user, get_db
@@ -25,6 +25,7 @@ from app.services.ai_summary_service import (
     trigger_ai_summary,
     trigger_batch_analysis,
 )
+from app.services.export_service import export_paper_citation
 from app.services.file_service import delete_paper_file, download_paper_file, upload_paper_file
 from app.services.paper_service import (
     create_paper,
@@ -146,6 +147,29 @@ def download_file(
     if not file_path:
         raise HTTPException(status_code=404, detail="文件不存在")
     return FileResponse(path=file_path, filename=filename, media_type="application/pdf")
+
+
+@router.get("/{paper_id}/export")
+def export_paper(
+    paper_id: int,
+    fmt: str = Query("bibtex", alias="format", pattern="^(bibtex|ris)$"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """导出论文引用（BibTeX 或 RIS 格式）"""
+    db_paper = get_paper(db, paper_id=paper_id, user_id=current_user.id)
+    if db_paper is None:
+        raise HTTPException(status_code=404, detail="论文不存在")
+    try:
+        content, filename, media_type = export_paper_citation(db_paper, fmt=fmt)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return PlainTextResponse(
+        content=content,
+        media_type=media_type,
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 
 @router.delete("/{paper_id}/file", response_model=Paper)

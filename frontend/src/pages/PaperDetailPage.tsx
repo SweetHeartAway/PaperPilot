@@ -12,7 +12,7 @@ import {
   useToggleFavorite,
 } from "../hooks/usePapers";
 import { useAddPaperTag, useRemovePaperTag } from "../hooks/useTags";
-import { getPaperDownloadUrl, fetchPaperFileBlob } from "../api/papers";
+import { getPaperDownloadUrl, getPaperExportUrl, fetchPaperFileBlob } from "../api/papers";
 import Content from "../layout/Content";
 import PaperInfo from "../components/paper/PaperInfo";
 import type { PaperEditForm } from "../components/paper/PaperInfo";
@@ -264,6 +264,10 @@ export default function PaperDetailPage() {
               <PaperInfo
                 paper={paper}
                 downloadUrl={paper.file_uuid ? getPaperDownloadUrl(paper.id) : undefined}
+                exportUrls={{
+                  bibtex: getPaperExportUrl(paper.id, "bibtex"),
+                  ris: getPaperExportUrl(paper.id, "ris"),
+                }}
                 titleActions={
                   <button
                     onClick={(e) => {

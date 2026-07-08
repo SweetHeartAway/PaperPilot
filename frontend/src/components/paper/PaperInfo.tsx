@@ -16,6 +16,8 @@ interface PaperInfoProps {
   downloadUrl?: string;
   /** 标题右侧操作区插槽（收藏按钮等） */
   titleActions?: ReactNode;
+  /** 引用导出 URL（BibTeX/RIS） */
+  exportUrls?: { bibtex?: string; ris?: string };
   // ─── Edit mode ───
   editing?: boolean;
   editForm?: PaperEditForm;
@@ -36,6 +38,7 @@ export default function PaperInfo({
   paper,
   downloadUrl,
   titleActions,
+  exportUrls,
   editing,
   editForm,
   onEditFormChange,
@@ -127,6 +130,30 @@ export default function PaperInfo({
             >
               {deleteFilePending ? "删除中..." : "删除文件"}
             </button>
+          </div>
+        )}
+
+        {exportUrls && (exportUrls.bibtex || exportUrls.ris) && (
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium text-gray-400">引用导出：</span>
+            {exportUrls.bibtex && (
+              <a
+                href={exportUrls.bibtex}
+                download
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50"
+              >
+                BibTeX
+              </a>
+            )}
+            {exportUrls.ris && (
+              <a
+                href={exportUrls.ris}
+                download
+                className="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-600 transition-colors hover:bg-gray-50"
+              >
+                RIS
+              </a>
+            )}
           </div>
         )}
 

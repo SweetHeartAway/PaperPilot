@@ -93,3 +93,8 @@ export function uploadPaperFile(
 export function toggleFavorite(paperId: number): Promise<Paper> {
   return client.post(`/api/v1/papers/${paperId}/favorite/toggle`).then((res) => res.data);
 }
+
+/** 获取论文引用导出 URL（BibTeX/RIS） */
+export function getPaperExportUrl(paperId: number, format: "bibtex" | "ris"): string {
+  return (client.defaults.baseURL as string) + `/api/v1/papers/${paperId}/export?format=${format}`;
+}
