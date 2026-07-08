@@ -1,7 +1,6 @@
 """共享 AI 系统提示词常量
 
-供 ai_service（旧版）和 ai_summary_service（新版）共同引用，
-避免两套系统提示词重复定义。
+供 ai_summary_service 引用，避免系统提示词重复定义。
 """
 
 # ─── 摘要分析 ───

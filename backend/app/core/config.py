@@ -18,7 +18,6 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
 
     # AI服务配置
-    AI_SERVICE_URL: str | None = None
     AI_API_KEY: str = ""  # OpenAI 兼容 API Key，为空时启用本地桩实现
     AI_API_BASE_URL: str = ""  # API 地址，切换模型时修改
     # DeepSeek: https://api.deepseek.com

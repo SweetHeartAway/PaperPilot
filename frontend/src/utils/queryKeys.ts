@@ -12,6 +12,9 @@ export const queryKeys = {
       version !== undefined
         ? (["papers", "ai-summary", paperId, analysisType, version] as const)
         : (["papers", "ai-summary", paperId, analysisType] as const),
+    aiSummaryVersions: (paperId: number) => ["papers", "ai-summary", "versions", paperId] as const,
+    aiSummaryDiff: (paperId: number, v1: number | null, v2: number | null) =>
+      ["papers", "ai-summary", "diff", paperId, v1, v2] as const,
   },
   tags: {
     all: ["tags"] as const,

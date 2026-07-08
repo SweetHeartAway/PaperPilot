@@ -69,7 +69,7 @@ export function useTriggerAIAnalysis(paperId: number, analysisType?: string) {
 
 export function usePaperAISummaryVersions(paperId: number) {
   return useQuery({
-    queryKey: ["papers", "ai-summary", "versions", paperId],
+    queryKey: queryKeys.papers.aiSummaryVersions(paperId),
     queryFn: () => fetchPaperAISummaryVersions(paperId),
     enabled: paperId > 0,
   });
@@ -77,7 +77,7 @@ export function usePaperAISummaryVersions(paperId: number) {
 
 export function usePaperAISummaryDiff(paperId: number, v1: number | null, v2: number | null) {
   return useQuery({
-    queryKey: ["papers", "ai-summary", "diff", paperId, v1, v2],
+    queryKey: queryKeys.papers.aiSummaryDiff(paperId, v1, v2),
     queryFn: () => fetchPaperAISummaryDiff(paperId, v1!, v2!),
     enabled: paperId > 0 && v1 !== null && v2 !== null && v1 !== v2,
   });

@@ -5,27 +5,6 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field, field_validator
 
-# ─── 遗留通用 AI 分析 Schema ─────────────────────────────────
-
-
-class AIAnalysisRequest(BaseModel):
-    """遗留请求模型 — 通用 AI 分析（/api/v1/ai/ 路由使用）"""
-
-    paper_content: str = Field(..., min_length=1)
-    analysis_type: str = Field(..., min_length=1)  # 如：summary, keywords, recommendations
-
-
-class AIAnalysisResponse(BaseModel):
-    """遗留响应模型 — 通用 AI 分析"""
-
-    analysis_id: int
-    analysis_type: str
-    result: str
-    created_at: datetime | None = None
-
-    model_config = {"from_attributes": True}
-
-
 # ─── 论文 AI Summary Schema ──────────────────────────────────
 
 
