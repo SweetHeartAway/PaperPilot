@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import FileUploadArea from "../components/ui/FileUploadArea";
 import UploadProgress from "../components/ui/UploadProgress";
 import { useCreatePaper } from "../hooks/useCreatePaper";
-import { uploadPaperFile } from "../api/papers";
+import { uploadPaperFile, lookupDOI } from "../api/papers";
 import { useAllTags } from "../hooks/useTagManagement";
 import { useToast } from "../hooks/useToast";
 
@@ -55,6 +55,31 @@ export default function PaperCreatePage() {
     setFileError("");
     setProgress(0);
   }, []);
+
+  // ─── DOI auto-complete ───
+
+  const [doiLoading, setDoiLoading] = useState(false);
+  const [doiError, setDoiError] = useState("");
+
+  const handleDOILookup = useCallback(async () => {
+    const d = doi.trim();
+    if (!d) return;
+    setDoiLoading(true);
+    setDoiError("");
+    try {
+      const result = await lookupDOI(d);
+      if (result.title) setTitle(result.title);
+      if (result.authors) setAuthors(result.authors);
+      if (result.abstract) setAbstract(result.abstract);
+      if (result.publication_date) {
+        setPublicationDate(result.publication_date.slice(0, 10));
+      }
+    } catch (err) {
+      setDoiError(err instanceof Error ? err.message : "DOI 查询失败");
+    } finally {
+      setDoiLoading(false);
+    }
+  }, [doi]);
 
   // ─── Submit handler ───
 
@@ -173,15 +198,57 @@ export default function PaperCreatePage() {
           <label htmlFor="paper-doi" className="mb-1 block text-sm font-medium text-gray-700">
             DOI
           </label>
-          <input
-            id="paper-doi"
-            type="text"
-            value={doi}
-            onChange={(e) => setDoi(e.target.value)}
-            disabled={isSubmitting}
-            placeholder="10.xxxx/xxxxx"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
-          />
+          <div className="flex gap-2">
+            <input
+              id="paper-doi"
+              type="text"
+              value={doi}
+              onChange={(e) => setDoi(e.target.value)}
+              disabled={isSubmitting}
+              placeholder="10.xxxx/xxxxx"
+              className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
+            />
+            <button
+              type="button"
+              onClick={handleDOILookup}
+              disabled={!doi.trim() || doiLoading || isSubmitting}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-blue-300 bg-blue-50 px-3 py-2 text-sm font-medium text-blue-700 transition-colors hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {doiLoading ? (
+                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  className="h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+              )}
+              {doiLoading ? "查询中..." : "自动补全"}
+            </button>
+          </div>
+          {doiError && <p className="mt-1 text-xs text-red-500">{doiError}</p>}
         </div>
 
         {/* Publication Date */}

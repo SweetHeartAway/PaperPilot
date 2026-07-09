@@ -82,3 +82,18 @@ class BatchTagRequest(BaseModel):
 
     paper_ids: list[int] = Field(..., min_length=1, max_length=50)
     tag_name: str = Field(..., min_length=1, max_length=100)
+
+
+class DOILookupRequest(BaseModel):
+    """DOI 查询请求"""
+
+    doi: str = Field(..., min_length=1, max_length=500, description="DOI 标识符")
+
+
+class DOILookupResponse(BaseModel):
+    """DOI 查询响应（CrossRef 元数据）"""
+
+    title: str
+    authors: str
+    abstract: str | None = None
+    publication_date: datetime | None = None

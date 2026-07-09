@@ -1,6 +1,11 @@
 import type { AxiosProgressEvent } from "axios";
 import client from "./client";
-import type { Paper, PaperListResponse, BatchActionResponse } from "../types/paper";
+import type {
+  Paper,
+  PaperListResponse,
+  BatchActionResponse,
+  DOILookupResponse,
+} from "../types/paper";
 
 export function fetchPaperList(params: {
   skip: number;
@@ -119,5 +124,11 @@ export async function batchAddTag(
     paper_ids: paperIds,
     tag_name: tagName,
   });
+  return data;
+}
+
+/** 通过 DOI 自动补全论文元数据 */
+export async function lookupDOI(doi: string): Promise<DOILookupResponse> {
+  const { data } = await client.post<DOILookupResponse>("/api/v1/papers/doi-lookup", { doi });
   return data;
 }

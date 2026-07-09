@@ -39,3 +39,10 @@ export interface BatchActionResponse {
   failed: number;
   results: BatchActionItem[];
 }
+
+export interface DOILookupResponse {
+  title: string;
+  authors: string;
+  abstract: string | null;
+  publication_date: string | null;
+}

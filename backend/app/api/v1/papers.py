@@ -20,13 +20,15 @@ from app.schemas.paper import (
     BatchActionResponse,
     BatchDeleteRequest,
     BatchTagRequest,
+    DOILookupRequest,
+    DOILookupResponse,
     Paper,
     PaperCreate,
     PaperListResponse,
     PaperUpdate,
 )
 from app.schemas.tag import TagName
-from app.services import tag_service
+from app.services import doi_service, tag_service
 from app.services.ai_summary_service import (
     diff_versions,
     get_ai_summary,
@@ -253,6 +255,26 @@ def remove_tag_from_paper(
             status_code = status.HTTP_404_NOT_FOUND
         raise HTTPException(status_code=status_code, detail=detail)
     return None
+
+
+# ─── DOI 自动补全 ──────────────────────────────────────────
+
+
+@router.post("/doi-lookup", response_model=DOILookupResponse)
+def lookup_doi(
+    request: DOILookupRequest,
+    current_user: User = Depends(get_current_user),
+):
+    """通过 CrossRef API 自动补全论文元数据（无需 API Key）
+
+    传入 DOI 后返回标题、作者、摘要、发表日期。
+    支持带 URL 前缀的 DOI（如 https://doi.org/10.xxxx/xxxxx）。
+    """
+    try:
+        result = doi_service.lookup_doi(request.doi)
+        return DOILookupResponse(**result)
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
 
 # ─── Favorite — 收藏 ─────────────────────────────────────────
