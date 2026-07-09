@@ -56,6 +56,7 @@ export default function ChatPanel({ paperId, hasContent = true }: ChatPanelProps
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [input, setInput] = useState("");
+  const [expandedSources, setExpandedSources] = useState<Set<number>>(new Set());
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -94,6 +95,7 @@ export default function ChatPanel({ paperId, hasContent = true }: ChatPanelProps
           const assistantMsg: ChatMessageType = {
             role: "assistant",
             content: res.answer,
+            sources: res.sources,
           };
           setMessages((prev) => [...prev, assistantMsg]);
         },
@@ -176,27 +178,87 @@ export default function ChatPanel({ paperId, hasContent = true }: ChatPanelProps
                 className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
-                    msg.role === "user" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-800"
-                  }`}
+                  className={`flex flex-col ${msg.role === "assistant" ? "items-start" : "items-end"} gap-1`}
                 >
-                  <div className="flex items-start gap-2">
-                    {msg.role === "assistant" && (
-                      <span className="mt-0.5 flex-shrink-0">
-                        <ChatBubbleIcon />
-                      </span>
-                    )}
-                    <div className="min-w-0">
-                      <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
-                        {msg.content}
-                      </p>
+                  <div
+                    className={`max-w-[85%] rounded-2xl px-4 py-2.5 ${
+                      msg.role === "user" ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    <div className="flex items-start gap-2">
+                      {msg.role === "assistant" && (
+                        <span className="mt-0.5 flex-shrink-0">
+                          <ChatBubbleIcon />
+                        </span>
+                      )}
+                      <div className="min-w-0">
+                        <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+                          {msg.content}
+                        </p>
+                      </div>
+                      {msg.role === "user" && (
+                        <span className="mt-0.5 flex-shrink-0">
+                          <UserIcon />
+                        </span>
+                      )}
                     </div>
-                    {msg.role === "user" && (
-                      <span className="mt-0.5 flex-shrink-0">
-                        <UserIcon />
-                      </span>
-                    )}
                   </div>
+
+                  {/* Sources collapse */}
+                  {msg.role === "assistant" && msg.sources && msg.sources.length > 0 && (
+                    <div className="ml-2 max-w-[90%]">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setExpandedSources((prev) => {
+                            const next = new Set(prev);
+                            if (next.has(i)) next.delete(i);
+                            else next.add(i);
+                            return next;
+                          })
+                        }
+                        className="flex items-center gap-1 rounded-md px-2 py-1 text-[11px] text-gray-400 transition-colors hover:bg-gray-50 hover:text-gray-600"
+                      >
+                        <svg
+                          className={`h-3 w-3 transition-transform ${expandedSources.has(i) ? "rotate-90" : ""}`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                          />
+                        </svg>
+                        查看 {msg.sources.length} 个来源
+                      </button>
+
+                      {expandedSources.has(i) && (
+                        <div className="mt-1 space-y-2">
+                          {msg.sources.map((src, si) => (
+                            <div
+                              key={si}
+                              className="rounded-lg border border-gray-100 bg-gray-50/80 px-3 py-2"
+                            >
+                              <div className="mb-1 flex items-center gap-2">
+                                <span className="inline-flex items-center rounded bg-blue-100 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">
+                                  相关度 {(1 - src.score).toFixed(2)}
+                                </span>
+                                <span className="text-[10px] text-gray-400">
+                                  片段 #{src.chunk_index}
+                                </span>
+                              </div>
+                              <p className="text-[11px] leading-relaxed text-gray-600 line-clamp-3">
+                                {src.text}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
