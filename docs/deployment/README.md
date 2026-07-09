@@ -2,43 +2,55 @@
 
 ## 环境要求
 
-- Python 3.12+
-- Node.js 20+
-- npm 10+
+- Docker + Docker Compose（推荐）
+- 或 Python 3.12+ + Node.js 20+
 
-## 环境变量
+---
 
-复制 `.env.example` 为 `.env`（如果存在），或创建 `.env` 文件：
+## 方式一：Docker 部署（推荐）
 
-### 后端 (`backend/.env`)
-
-```bash
-# 数据库
-DATABASE_URL=sqlite:///./paperpilot.db    # SQLite（开发）
-# DATABASE_URL=postgresql://user:pass@host:5432/paperpilot  # PostgreSQL（生产）
-
-# JWT
-SECRET_KEY=your-secret-key-here
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-
-# AI 客户端（选配，不配则使用桩实现）
-AI_API_BASE_URL=https://api.deepseek.com/v1
-AI_MODEL=deepseek-chat
-AI_API_KEY=sk-your-key-here
-
-# Embedding（选配）
-EMBEDDING_API_BASE_URL=https://api.openai.com/v1
-EMBEDDING_API_KEY=sk-your-key-here
-EMBEDDING_MODEL=text-embedding-ada-002
-```
-
-### 前端 (`frontend/.env`)
+一键启动所有服务：
 
 ```bash
-VITE_API_BASE_URL=http://localhost:8000
+# 构建并启动
+docker compose build
+docker compose up -d
+
+# 查看日志
+docker compose logs -f
+
+# 停止
+docker compose down
 ```
 
-## 本地启动
+访问 `http://localhost`。
+
+### 持久化数据
+
+Docker 使用三个 named volume 持久化数据：
+
+| Volume | 路径 | 内容 |
+|--------|------|------|
+| `paperpilot_data` | `/app/data/` | SQLite 数据库 |
+| `paperpilot_uploads` | `/app/uploads/` | 用户上传的 PDF |
+| `paperpilot_chroma` | `/app/chroma_db/` | Chroma 向量索引 |
+
+### 配置
+
+后端配置通过 `backend/.env` 加载。Docker 启动时自动读取该文件，无需额外操作。
+
+### 切换 PostgreSQL
+
+修改 `docker-compose.yml` 中 `DATABASE_URL` 环境变量：
+
+```yaml
+environment:
+  - DATABASE_URL=postgresql://user:pass@host:5432/paperpilot
+```
+
+---
+
+## 方式二：本地手动启动
 
 ### 后端
 
@@ -59,6 +71,8 @@ npm run dev
 
 访问 `http://localhost:5173`。
 
+---
+
 ## 生产构建
 
 ### 前端
@@ -69,23 +83,23 @@ npm run build
 # 输出到 frontend/dist/
 ```
 
-将 `dist/` 目录部署到静态服务器（Nginx、Vercel、Netlify 等）。
+将 `dist/` 部署到 Nginx（SPA 路由需要 fallback 到 index.html）。
 
 ### 后端
 
-使用 Uvicorn + Gunicorn：
+使用 Gunicorn + Uvicorn Worker：
 
 ```bash
 pip install gunicorn
 python -m gunicorn main:app -w 4 -k uvicorn.workers.UvicornWorker
 ```
 
-或使用 Docker（需自行编写 Dockerfile）。
+---
 
 ## 数据库迁移
 
 ```bash
 cd backend
-python -m alembic upgrade head      # 应用迁移
-python -m alembic revision --autogenerate -m "description"  # 生成新迁移
+python -m alembic upgrade head                           # 应用迁移
+python -m alembic revision --autogenerate -m "xxx"       # 生成新迁移
 ```

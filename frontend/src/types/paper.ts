@@ -1,4 +1,5 @@
 import type { Tag } from "./tag";
+import type { Collection } from "./collection";
 
 export interface Paper {
   id: number;
@@ -12,6 +13,7 @@ export interface Paper {
   original_filename?: string;
   file_size?: number;
   tags: Tag[];
+  collections?: Collection[];
   created_at: string;
   updated_at: string;
 }

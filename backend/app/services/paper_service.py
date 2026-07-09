@@ -60,8 +60,9 @@ def get_papers(
     sort_by: str = "updated_at",
     sort_order: str = "desc",
     tag_ids: list[int] | None = None,
+    collection_id: int | None = None,
 ):
-    """获取用户论文列表（支持搜索、分页、收藏筛选、排序、标签筛选）"""
+    """获取用户论文列表（支持搜索、分页、收藏筛选、排序、标签筛选、阅读列表筛选）"""
     query = db.query(Paper).filter(Paper.user_id == user_id)
 
     if favorite_only:
@@ -71,6 +72,9 @@ def get_papers(
         from app.models.tag import Tag
 
         query = query.filter(Paper.tags.any(Tag.id.in_(tag_ids)))
+
+    if collection_id is not None:
+        query = query.filter(Paper.collections.any(id=collection_id))
 
     if search:
         like = f"%{search}%"

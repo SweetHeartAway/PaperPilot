@@ -29,7 +29,7 @@ from app.schemas.paper import (
     PaperUpdate,
 )
 from app.schemas.tag import TagName
-from app.services import doi_service, stats_service, tag_service
+from app.services import collection_service, doi_service, stats_service, tag_service
 from app.services.ai_summary_service import (
     diff_versions,
     get_ai_summary,
@@ -78,10 +78,11 @@ def read_papers(
     ),
     sort_order: str = Query("desc", description="排序方向（asc/desc）"),
     tag_ids: str | None = Query(None, description="标签 ID 列表（逗号分隔，如 1,2,3）"),
+    collection_id: int | None = Query(None, description="阅读列表 ID"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """获取论文列表（支持搜索、分页、排序、标签筛选、收藏筛选）"""
+    """获取论文列表（支持搜索、分页、排序、标签筛选、收藏筛选、阅读列表筛选）"""
     parsed_tag_ids: list[int] | None = None
     if tag_ids:
         try:
@@ -99,6 +100,7 @@ def read_papers(
         sort_by=sort_by,
         sort_order=sort_order,
         tag_ids=parsed_tag_ids,
+        collection_id=collection_id,
     )
     return PaperListResponse(items=papers, total=total)
 
@@ -256,6 +258,60 @@ def remove_tag_from_paper(
             status_code = status.HTTP_404_NOT_FOUND
         raise HTTPException(status_code=status_code, detail=detail)
     return None
+
+
+# ─── Collection — 阅读列表关联 ─────────────────────────────────
+
+
+@router.post("/{paper_id}/collections/{collection_id}", response_model=Paper)
+def add_paper_to_collection_route(
+    paper_id: int,
+    collection_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """将单篇论文添加到阅读列表"""
+    try:
+        results = collection_service.add_papers_to_collection(
+            db=db,
+            collection_id=collection_id,
+            paper_ids=[paper_id],
+            user_id=current_user.id,
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    if results[0]["status"] == "failed":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=results[0]["reason"])
+
+    db_paper = get_paper(db, paper_id=paper_id, user_id=current_user.id)
+    return db_paper
+
+
+@router.delete("/{paper_id}/collections/{collection_id}", response_model=Paper)
+def remove_paper_from_collection_route(
+    paper_id: int,
+    collection_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """从阅读列表移除单篇论文"""
+    try:
+        collection_service.remove_paper_from_collection(
+            db=db,
+            collection_id=collection_id,
+            paper_id=paper_id,
+            user_id=current_user.id,
+        )
+    except ValueError as e:
+        detail = str(e)
+        status_code = (
+            status.HTTP_404_NOT_FOUND if "不存在" in detail else status.HTTP_400_BAD_REQUEST
+        )
+        raise HTTPException(status_code=status_code, detail=detail)
+
+    db_paper = get_paper(db, paper_id=paper_id, user_id=current_user.id)
+    return db_paper
 
 
 # ─── 统计 ──────────────────────────────────────────────────

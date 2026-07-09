@@ -25,7 +25,8 @@ Authorization: Bearer <token>
 | 模块 | 路径 | 说明 |
 |------|------|------|
 | Auth | `/api/v1/auth/` | 注册、登录 |
-| Papers | `/api/v1/papers/` | 论文 CRUD、PDF 上传/下载、标签管理、AI 分析、收藏、引用导出、Chat |
+| Papers | `/api/v1/papers/` | 论文 CRUD、PDF 上传/下载、标签管理、AI 分析、收藏、引用导出、批量和统计 |
+| Collections | `/api/v1/collections/` | 阅读列表 CRUD、论文批量添加/移除 |
 | Tags | `/api/v1/tags/` | 标签 CRUD |
 | Users | `/api/v1/users/` | 用户信息（含头像/密码修改/AI 偏好） |
 | Prompts | `/api/v1/prompts/` | 自定义 Prompt 模板 CRUD |
@@ -40,5 +41,7 @@ Authorization: Bearer <token>
 
 - **User** → has many **Paper**
 - **Paper** → many to many **Tag**（通过关联表）
+- **Paper** → many to many **Collection**（通过关联表）
 - **Paper** → has many **AIAnalysis**（不同版本和类型）
+- **User** → has many **Collection**
 - **PromptTemplate** → 独立实体，可关联 AIAnalysis

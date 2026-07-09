@@ -1,7 +1,7 @@
 # PaperPilot 架构分析
 
-> 生成日期：2026-07-08
-> 基于项目 commit b416b0e（master 分支）
+> 生成日期：2026-07-09
+> 基于最新 commit（含阅读列表/自定义集合功能）
 
 ---
 
@@ -57,11 +57,11 @@ PaperPilot 采用经典前后端分离架构，数据流严格单向：
 ```
 backend/
 ├── app/
-│   ├── api/v1/           # 6 个路由模块（auth, users, papers, tags, ai, prompts）
+│   ├── api/v1/           # 7 个路由模块（auth, users, papers, collections, tags, chat, prompts）
 │   ├── core/             # 配置（config.py）、依赖（dependencies.py）
-│   ├── models/           # 4 个 SQLAlchemy 模型（User, Paper, Tag, AIAnalysis, PromptTemplate）
+│   ├── models/           # 6 个模型（User, Paper, Tag, Collection, AIAnalysis, AIPromptTemplate）
 │   ├── schemas/          # Pydantic v2 请求/响应模型
-│   ├── services/         # 10 个业务逻辑模块
+│   ├── services/         # 14 个业务逻辑模块
 │   │   ├── paper_service.py
 │   │   ├── ai_summary_service.py (与 AI 分析相关逻辑)
 │   │   ├── ai_utils.py (文本提取/提示词格式化)
@@ -82,7 +82,7 @@ backend/
 │       ├── pdf_extractor.py
 │       └── database.py
 ├── alembic/versions/     # 数据库迁移
-├── tests/                # 142 个测试
+├── tests/                # 142 个测试（含 collections）
 └── main.py               # 应用入口
 ```
 
@@ -95,12 +95,15 @@ frontend/src/
 │   ├── auth.ts
 │   ├── papers.ts
 │   ├── ai.ts
+│   ├── collections.ts
+│   ├── stats.ts
 │   ├── tags.ts
 │   └── prompts.ts
 ├── components/
 │   ├── ui/           # 9 个纯 UI 基件（EmptyState, ErrorState, Pagination, Skeleton, Spinner, TabBar, UploadProgress, FileUploadArea, ToastContainer）
 │   ├── paper/        # 7 个论文领域组件（PaperCard, PaperList, PaperCardSkeleton, PaperInfo, AISummaryPanel, PDFViewer, TagManager）
 │   ├── auth/         # 1 个认证组件（ProtectedRoute）
+│   ├── collection/   # 1 个集合组件（CollectionSelectorModal）
 │   └── user/         # 2 个用户组件（ProfileForm, ProfileSkeleton）
 ├── hooks/            # React Query 封装 + 自定义 hooks
 │   ├── usePapers.ts
@@ -111,21 +114,24 @@ frontend/src/
 │   ├── usePaperChat.ts
 │   ├── useAuth.ts
 │   ├── useUser.ts
-│   └── useToast.ts
+├── usePaperStats.ts
+├── useCollections.ts
+└── useToast.ts
 ├── layout/           # 6 个纯 props 布局组件
 │   ├── Header.tsx / Sidebar.tsx / Content.tsx / Footer.tsx
 │   ├── MainLayout.tsx / AuthLayout.tsx
 │   └── index.ts
-├── pages/            # 10 个页面（PaperList, PaperCreate, PaperDetail, Login, Register, Tags, Prompts, Profile, ErrorPage, NotFoundPage）
+├── pages/            # 12 个页面（PaperList, PaperCreate, PaperDetail, Collections, Stats, Login, Register, Tags, Prompts, Profile, ErrorPage, NotFoundPage）
 ├── services/         # 数据转换层
 │   ├── paperService.ts
 │   ├── tagService.ts
-│   └── userService.ts
+│   ├── userService.ts
+│   └── collectionService.ts
 ├── stores/           # Zustand 客户端状态
 │   ├── authStore.ts
 │   └── toastStore.ts
 ├── types/            # TypeScript 类型定义
-│   ├── paper.ts / auth.ts / user.ts / tag.ts / ai.ts / prompt.ts
+│   ├── paper.ts / auth.ts / user.ts / tag.ts / ai.ts / prompt.ts / collection.ts
 ├── utils/
 │   ├── format.ts
 │   ├── token.ts
@@ -144,9 +150,10 @@ frontend/src/
 |------|------|------|------|------|
 | `auth.py` | `/api/v1/auth` | 2 | 无 | 注册、登录 |
 | `users.py` | `/api/v1/users` | 7 | 全部 | 当前用户、用户查询、更新资料、修改密码、头像上传/删除/获取 |
-| `papers.py` | `/api/v1/papers` | 16+ | 全部 | 论文 CRUD + PDF + 标签 + AI 分析 + 收藏 + Chat + 引用导出（含版本/批量）|
+| `papers.py` | `/api/v1/papers` | 20+ | 全部 | 论文 CRUD + PDF + 标签 + AI 分析 + 收藏 + 导出 + 统计 + 批量 + DOI |
 | `tags.py` | `/api/v1/tags` | 5 | 全部 | 标签 CRUD |
 | `prompts.py` | `/api/v1/prompts` | 6 | 全部 | 自定义 Prompt 模板 |
+| `collections.py` | `/api/v1/collections` | 7 | 全部 | 阅读列表 CRUD + 论文关联 |
 
 ### 2.2 核心数据模型关系
 
@@ -154,6 +161,7 @@ frontend/src/
 User 1───* Paper 1───* AIAnalysis
 User 1───* AIPromptTemplate 1───* AIAnalysis (optional FK)
 Paper *───* Tag (通过 paper_tags 关联表)
+User 1───* Collection *───* Paper (通过 paper_collections 关联表)
 ```
 
 ### 2.3 路由 → 服务 → 模型 映射
@@ -166,6 +174,8 @@ Paper *───* Tag (通过 paper_tags 关联表)
 | `GET/POST /papers/{id}/ai-summary` | `ai_summary_service.get_ai_summary()/trigger_ai_summary()` | AIAnalysis |
 | `POST /papers/{id}/tags` | `tag_service.add_tag_to_paper()` | Paper, Tag |
 | `GET /tags` | `tag_service.get_tags()` | Tag |
+| `GET/POST /collections` | `collection_service.get_collections()/create_collection()` | Collection |
+| `POST /collections/{id}/papers` | `collection_service.add_papers_to_collection()` | Collection, Paper |
 | `GET /prompts/` | `prompt_service.get_templates()` | AIPromptTemplate |
 
 ### 2.4 认证流程
@@ -219,7 +229,9 @@ except ValueError as e:
           <Route path="papers/create"    element={<PaperCreatePage />} />
           <Route path="papers/:id"       element={<PaperDetailPage />} />
           <Route path="tags"             element={<TagsPage />} />
+          <Route path="collections"      element={<CollectionsPage />} />
           <Route path="prompts"          element={<PromptsPage />} />
+          <Route path="stats"            element={<StatsPage />} />
           <Route path="profile"          element={<ProfilePage />} />
         </Route>
       </Route>
@@ -256,16 +268,16 @@ PaperListPage
 | 分类 | 数量 | 特点 |
 |------|------|------|
 | UI 基件 | 12 | 纯 props 驱动，零业务逻辑，可跨项目复用 |
-| 领域组件 | 7 | 通过 props 注入回调，不直接 import hooks |
+| 领域组件 | 8 | 通过 props 注入回调，不直接 import hooks |
 | Layout | 6 | 纯 props 驱动，零业务逻辑 |
 | 认证组件 | 1 | ProtectedRoute（路由守卫） |
-| 页面 | 10 | 编排层：调用 hooks → 传入组件 |
+| 页面 | 12 | 编排层：调用 hooks → 传入组件 |
 
 ### 3.4 状态管理双层架构
 
 | 状态类型 | 工具 | 数据 |
 |----------|------|------|
-| 服务端状态 | React Query | 论文列表、详情、AI 分析、标签 |
+| 服务端状态 | React Query | 论文列表、详情、AI 分析、标签、阅读列表 |
 | 客户端状态 | Zustand | auth token、toast 通知 |
 
 Zustand store 职责分离：
@@ -302,6 +314,9 @@ toastStore: toasts[], add(), remove(), clear()
 
 // 当前用户
 ["user", "me"]
+
+// 阅读列表
+["collections"]
 ```
 
 ### 4.2 关键模式
@@ -564,7 +579,7 @@ vector_chroma.py (repositories)
 POST   /api/v1/auth/register          # 注册
 POST   /api/v1/auth/login             # 登录
 
-GET    /api/v1/papers/                # 论文列表（分页+搜索）
+GET    /api/v1/papers/                # 论文列表（分页+搜索+排序+标签筛选+收藏筛选+列表筛选）
 POST   /api/v1/papers/                # 创建论文
 GET    /api/v1/papers/{paper_id}      # 论文详情
 PUT    /api/v1/papers/{paper_id}      # 更新论文
@@ -577,11 +592,25 @@ DELETE /api/v1/papers/{paper_id}/tags/{tag_id}     # 移除标签
 POST   /api/v1/papers/{paper_id}/favorite/toggle   # 切换收藏
 GET    /api/v1/papers/{paper_id}/export            # 引用导出（?format=bibtex|ris）
 POST   /api/v1/papers/{paper_id}/chat              # 论文对话（RAG）
+POST   /api/v1/papers/{paper_id}/collections/{cid} # 添加到阅读列表
+DELETE /api/v1/papers/{paper_id}/collections/{cid} # 从阅读列表移除
+POST   /api/v1/papers/batch/delete                 # 批量删除
+POST   /api/v1/papers/batch/tags                   # 批量打标签
 POST   /api/v1/papers/batch/ai-summary             # 批量 AI 分析
 GET    /api/v1/papers/{paper_id}/ai-summary        # 获取 AI 分析
 POST   /api/v1/papers/{paper_id}/ai-summary        # 触发 AI 分析
 GET    /api/v1/papers/{paper_id}/ai-summary/versions      # 版本列表
 GET    /api/v1/papers/{paper_id}/ai-summary/versions/diff # 版本对比
+POST   /api/v1/papers/doi-lookup                   # DOI 自动补全（CrossRef）
+GET    /api/v1/papers/stats                        # 统计概览
+
+GET    /api/v1/collections/           # 阅读列表（含 paper_count）
+POST   /api/v1/collections/           # 创建阅读列表
+GET    /api/v1/collections/{id}       # 列表详情
+PUT    /api/v1/collections/{id}       # 更新列表
+DELETE /api/v1/collections/{id}       # 删除列表
+POST   /api/v1/collections/{id}/papers           # 批量添加论文
+DELETE /api/v1/collections/{id}/papers/{paper_id} # 移除论文
 
 GET    /api/v1/tags/                  # 标签列表
 POST   /api/v1/tags/                  # 创建标签
@@ -602,6 +631,8 @@ POST   /api/v1/prompts/               # 创建模板
 GET    /api/v1/prompts/{template_id}  # 模板详情
 PUT    /api/v1/prompts/{template_id}  # 更新模板
 DELETE /api/v1/prompts/{template_id}  # 删除模板
+POST   /api/v1/prompts/{template_id}/set-default   # 设为默认
+```
 POST   /api/v1/prompts/{template_id}/set-default   # 设为默认
 ```
 

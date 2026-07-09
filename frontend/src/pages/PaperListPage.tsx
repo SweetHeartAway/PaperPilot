@@ -9,12 +9,14 @@ import {
   useBatchAddTag,
 } from "../hooks/usePapers";
 import { useAllTags } from "../hooks/useTagManagement";
+import { useAllCollections } from "../hooks/useCollections";
 import Content from "../layout/Content";
 import PaperList from "../components/paper/PaperList";
 import PaperCardSkeleton from "../components/paper/PaperCardSkeleton";
 import EmptyState from "../components/ui/EmptyState";
 import ErrorState from "../components/ui/ErrorState";
 import Pagination from "../components/ui/Pagination";
+import CollectionSelectorModal from "../components/collection/CollectionSelectorModal";
 import { XIcon } from "../components/ui/Icons";
 import { getErrorMessage } from "../utils/error";
 import type { Paper } from "../types/paper";
@@ -41,15 +43,21 @@ export default function PaperListPage() {
   const [favoriteOnly, setFavoriteOnly] = useState(false);
   const [sortBy, setSortBy] = useState("updated_at");
   const [selectedTagIds, setSelectedTagIds] = useState<number[]>([]);
-  const [showTagDropdown, setShowTagDropdown] = useState(false);
+  const [showTagModal, setShowTagModal] = useState(false);
+  const [batchTagName, setBatchTagName] = useState("");
 
   // ─── Batch mode ───
   const [batchMode, setBatchMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [showTagModal, setShowTagModal] = useState(false);
-  const [batchTagName, setBatchTagName] = useState("");
+
+  // ─── Collection filter ───
+  const [filterCollectionId, setFilterCollectionId] = useState<number | undefined>(undefined);
+
+  // ─── Collection selector modal ───
+  const [collectionModalPaperId, setCollectionModalPaperId] = useState<number | null>(null);
 
   const { data: allTags } = useAllTags();
+  const { data: allCollections } = useAllCollections();
 
   // Debounce search input + 同时重置到第 1 页
   useEffect(() => {
@@ -68,6 +76,7 @@ export default function PaperListPage() {
     sortBy,
     sortOrder: sortBy === "title" ? "asc" : "desc",
     tagIds: selectedTagIds.length > 0 ? selectedTagIds : undefined,
+    collectionId: filterCollectionId,
   });
 
   const toggleTag = (tagId: number) => {
@@ -194,6 +203,30 @@ export default function PaperListPage() {
               strokeLinecap="round"
               strokeLinejoin="round"
               d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"
+            />
+          </svg>
+        </button>
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setCollectionModalPaperId(paper.id);
+          }}
+          className="rounded p-1 text-gray-400 transition-colors hover:bg-green-50 hover:text-green-500"
+          aria-label={`管理 ${paper.title} 的阅读列表`}
+          title="管理阅读列表"
+        >
+          <svg
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
             />
           </svg>
         </button>
@@ -406,6 +439,44 @@ export default function PaperListPage() {
           </div>
         )}
 
+        {/* Collection filter */}
+        {allCollections && allCollections.length > 0 && (
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="text-xs font-medium text-gray-400">列表：</span>
+            {allCollections.map((col) => {
+              const isSelected = filterCollectionId === col.id;
+              return (
+                <button
+                  key={col.id}
+                  onClick={() => {
+                    setFilterCollectionId(isSelected ? undefined : col.id);
+                    setPage(1);
+                  }}
+                  className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+                    isSelected
+                      ? "bg-green-600 text-white"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  {col.name}
+                  {isSelected && <XIcon className="ml-1 h-3 w-3" />}
+                </button>
+              );
+            })}
+            {filterCollectionId !== undefined && (
+              <button
+                onClick={() => {
+                  setFilterCollectionId(undefined);
+                  setPage(1);
+                }}
+                className="text-xs text-gray-400 underline transition-colors hover:text-gray-600"
+              >
+                清除筛选
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Content */}
         {isLoading && !data ? (
           <PaperCardSkeleton count={6} />
@@ -441,6 +512,22 @@ export default function PaperListPage() {
           )
         )}
       </Content>
+
+      {/* Collection selector modal */}
+      {collectionModalPaperId !== null &&
+        data &&
+        (() => {
+          const paper = data.papers.find((p) => p.id === collectionModalPaperId);
+          const paperCollections = paper?.collections ?? [];
+          return (
+            <CollectionSelectorModal
+              paperId={collectionModalPaperId}
+              paperCollections={paperCollections}
+              open={true}
+              onClose={() => setCollectionModalPaperId(null)}
+            />
+          );
+        })()}
 
       {/* Tag modal */}
       {showTagModal && (

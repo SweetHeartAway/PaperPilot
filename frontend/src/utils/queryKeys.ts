@@ -29,6 +29,9 @@ export const queryKeys = {
   user: {
     me: ["user", "me"] as const,
   },
+  collections: {
+    all: ["collections"] as const,
+  },
   stats: {
     all: ["stats"] as const,
   },

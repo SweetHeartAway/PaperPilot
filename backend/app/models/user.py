@@ -31,6 +31,7 @@ class User(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     papers = relationship("Paper", back_populates="user")
+    collections = relationship("Collection", back_populates="user", cascade="all, delete-orphan")
 
     # 用户的 Prompt 模板列表（通过 prompt_templates.user_id 关联）
     prompt_templates = relationship(

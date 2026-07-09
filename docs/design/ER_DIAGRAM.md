@@ -1,6 +1,6 @@
 # PaperPilot 数据库 ER 图
 
-> 生成日期：2026-07-01
+> 生成日期：2026-07-09
 
 ## ER 图
 
@@ -8,8 +8,10 @@
 erDiagram
     User ||--o{ Paper : "publishes"
     User ||--o{ AIPromptTemplate : "creates"
+    User ||--o{ Collection : "organizes"
     Paper ||--o{ AIAnalysis : "has"
     Paper }o--o{ Tag : "tagged_with"
+    Paper }o--o{ Collection : "included_in"
     AIPromptTemplate ||--o{ AIAnalysis : "optional_template"
 
     User {
@@ -76,9 +78,18 @@ erDiagram
         datetime updated_at "server_default now(), onupdate now()"
     }
 
-    paper_tags {
+    Collection {
+        int id PK "auto-increment"
+        varchar name "not null, length 100"
+        text description "nullable"
+        int user_id FK "not null"
+        datetime created_at "server_default now()"
+        datetime updated_at "server_default now(), onupdate now()"
+    }
+
+    paper_collections {
         int paper_id FK PK "ondelete CASCADE"
-        int tag_id FK PK "ondelete CASCADE"
+        int collection_id FK PK "ondelete CASCADE"
     }
 ```
 
@@ -157,6 +168,17 @@ erDiagram
 | created_at | datetime | server_default | 创建时间 |
 | updated_at | datetime | server_default + onupdate | 最后更新时间 |
 
+### Collection（阅读列表）
+
+| 字段 | 类型 | 约束 | 说明 |
+|------|------|------|------|
+| id | int | PK | 列表唯一标识 |
+| name | varchar(100) | NOT NULL | 列表名称 |
+| description | text | nullable | 列表描述 |
+| user_id | int | FK -> users.id | 所属用户 |
+| created_at | datetime | server_default | 创建时间 |
+| updated_at | datetime | server_default + onupdate | 最后更新时间 |
+
 ### paper_tags（论文-标签关联表）
 
 | 字段 | 类型 | 约束 | 说明 |
@@ -164,19 +186,30 @@ erDiagram
 | paper_id | int | PK, FK -> papers.id ON DELETE CASCADE | 论文 ID |
 | tag_id | int | PK, FK -> tags.id ON DELETE CASCADE | 标签 ID |
 
+### paper_collections（论文-阅读列表关联表）
+
+| 字段 | 类型 | 约束 | 说明 |
+|------|------|------|------|
+| paper_id | int | PK, FK -> papers.id ON DELETE CASCADE | 论文 ID |
+| collection_id | int | PK, FK -> collections.id ON DELETE CASCADE | 阅读列表 ID |
+
 ## 关键关系
 
 1. **User -> Paper (1:N)** -- `Paper.user_id` -> `User.id`。一个用户可拥有多篇论文
-2. **User -> AIPromptTemplate (1:N)** -- `AIPromptTemplate.user_id` -> `User.id`。一个用户可创建多个自定义 Prompt 模板
-3. **Paper -> AIAnalysis (1:N)** -- `AIAnalysis.paper_id` -> `Paper.id`。一篇论文可有多个版本的 AI 分析记录
-4. **Paper <-> Tag (M:N)** -- 通过 `paper_tags` 关联表。一篇论文可有多个标签，一个标签可属于多篇论文
-5. **AIPromptTemplate -> AIAnalysis (1:N, 可选)** -- `AIAnalysis.prompt_template_id` -> `AIPromptTemplate.id`。可选关联，为空时使用默认提示词
+2. **User -> Collection (1:N)** -- `Collection.user_id` -> `User.id`。一个用户可创建多个阅读列表
+3. **User -> AIPromptTemplate (1:N)** -- `AIPromptTemplate.user_id` -> `User.id`。一个用户可创建多个自定义 Prompt 模板
+4. **Paper -> AIAnalysis (1:N)** -- `AIAnalysis.paper_id` -> `Paper.id`。一篇论文可有多个版本的 AI 分析记录
+5. **Paper <-> Tag (M:N)** -- 通过 `paper_tags` 关联表。一篇论文可有多个标签，一个标签可属于多篇论文
+6. **Paper <-> Collection (M:N)** -- 通过 `paper_collections` 关联表。一篇论文可属于多个阅读列表，一个列表可包含多篇论文
+7. **AIPromptTemplate -> AIAnalysis (1:N, 可选)** -- `AIAnalysis.prompt_template_id` -> `AIPromptTemplate.id`。可选关联，为空时使用默认提示词
 
 ## 级联行为
 
 - **Paper 删除 -> AIAnalysis 级联删除**：`cascade="all, delete-orphan"`，删除论文时连带清除所有 AI 分析记录
 - **Paper 删除 -> paper_tags 自动清除**：`ondelete="CASCADE"`，删除论文时自动解除标签关联
 - **Tag 删除 -> paper_tags 自动清除**：`ondelete="CASCADE"`，删除标签时自动解除论文关联
+- **Collection 删除 -> paper_collections 自动清除**：`ondelete="CASCADE"`，删除列表时自动解除论文关联
+- **Paper 删除 -> paper_collections 自动清除**：`ondelete="CASCADE"`，删除论文时自动解除列表关联
 
 ## 数据库配置
 

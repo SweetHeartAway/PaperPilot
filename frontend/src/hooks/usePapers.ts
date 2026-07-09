@@ -180,11 +180,12 @@ export function useToggleFavorite(paperId?: number) {
   const queryClient = useQueryClient();
   const toast = useToast();
   return useMutation({
-    mutationFn: () => toggleFavorite(paperId!),
-    onSuccess: (updatedPaper) => {
+    mutationFn: (id?: number) => toggleFavorite(id ?? paperId!),
+    onSuccess: (updatedPaper, id) => {
       // 更新详情页缓存
-      if (paperId) {
-        queryClient.setQueryData(queryKeys.papers.detail(paperId), updatedPaper);
+      const pid = id ?? paperId;
+      if (pid) {
+        queryClient.setQueryData(queryKeys.papers.detail(pid), updatedPaper);
       }
       // 刷新列表缓存
       queryClient.invalidateQueries({ queryKey: queryKeys.papers.lists() });

@@ -1,0 +1,31 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    ports:
+      - "8000:8000"
+    volumes:
+      # 持久化 SQLite 数据库、上传文件和 Chroma 向量数据
+      - paperpilot_data:/app/data
+      - paperpilot_uploads:/app/uploads
+      - paperpilot_chroma:/app/chroma_db
+    env_file:
+      - ./backend/.env
+    environment:
+      # Docker 环境下使用持久化路径
+      - DATABASE_URL=sqlite:///./data/paperpilot.db
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  paperpilot_data:
+  paperpilot_uploads:
+  paperpilot_chroma:

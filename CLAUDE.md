@@ -225,6 +225,7 @@ api/ (HTTP only) → services/ (transform) → hooks/ (React Query) → pages/ (
 | 论文收藏（is_favorite toggle） | ✅ |
 | BibTeX/RIS 引用导出 | ✅ |
 | 论文列表排序 + 标签筛选 | ✅ |
+| 阅读列表（Collection CRUD + 多对多关联） | ✅ |
 | 后端测试覆盖率（142 个测试） | ✅ |
 | **前端** | |
 | Layout 系统（Header/Sidebar/Content/Footer） | ✅ |
@@ -251,6 +252,14 @@ api/ (HTTP only) → services/ (transform) → hooks/ (React Query) → pages/ (
 | BibTeX/RIS 引用导出按钮 | ✅ |
 | 论文列表排序下拉 + 标签筛选 chips | ✅ |
 | Chat 论文对话面板 | ✅ |
+| 阅读列表管理页面（创建/编辑/删除 + 论文数统计） | ✅ |
+| 列表选择弹窗（CollectionSelectorModal 多选勾选） | ✅ |
+| 论文列表页列表筛选（绿色 chips）+ 管理列表按钮 | ✅ |
+| 论文详情页所属列表 badges + 管理列表入口 | ✅ |
+| 批量删除 / 批量打标签（论文列表页） | ✅ |
+| DOI 自动补全（PaperCreatePage CrossRef 按钮） | ✅ |
+| 统计概览页面（数字卡片/标签分布/月度柱图） | ✅ |
+| Chat 面板来源引用展示（可折叠来源卡片） | ✅ |
 
 | **文档** | |
 | API 文档 | ✅ 已更新 |
@@ -268,6 +277,8 @@ api/ (HTTP only) → services/ (transform) → hooks/ (React Query) → pages/ (
 | 页面性能优化 | ✅ React.memo + lazy 代码分割（主 chunk -25%） |
 | UI 细节优化 | ✅ SVG 图标抽取、按钮统一、无障碍 aria-label |
 | E2E 测试 | ✅ Playwright + 3 个测试文件（auth/navigation/paper） |
+| CI 配置 | ✅ GitHub Actions（push/PR → ruff + pytest + oxlint + tsc + vitest） |
+| Docker 容器化 | ✅ Nginx + Uvicorn + docker-compose（三 volume 持久化） |
 
 ## 需要按需阅读的文档
 
@@ -282,18 +293,16 @@ api/ (HTTP only) → services/ (transform) → hooks/ (React Query) → pages/ (
 > 以下为基于现有代码分析的业务功能建议，按 P0-P2 优先级排列。
 > Claude Code 在执行任务时，仅在用户明确要求的情况下完成对应内容。
 
-### P0（高价值低投入，已全部完成 ✅）
+### P0（高价值低投入 ✅）
 - [x] ⭐ 论文收藏功能 — 利用已有 `is_favorite` 字段，前后端完整交互
 - [x] 📄 BibTeX/RIS 引用导出 — 独立 `export_service.py`，支持两种学术引用格式
 - [x] 🔍 论文列表排序 + 标签筛选 — 排序下拉（时间/标题/日期）+ 标签 chips 多选
 
-### P1（实用功能，待实现 ⏳）
-- [ ] 🗑️ 批量删除 / 批量打标签 — 利用现有批量模式 UI 框架，后端加批量端点和前端加按钮
-- [ ] 📚 Chat 面板展示引用来源 — 后端 `ChatResponse.sources` 已返回，前端未展示来源卡片
-- [ ] 🔗 DOI 自动补全 — 调用 CrossRef API 自动拉取论文元数据，减少手动录入
-- [ ] 🐳 Docker 容器化 — 前端 Nginx + 后端 Gunicorn + docker-compose.yml
+### P1（实用功能 ✅）
+- [x] 🗑️ 批量删除 / 批量打标签 — 批量模式 + 后端批量端点 + 前端按钮
+- [x] 📚 Chat 面板展示引用来源 — 后端 `ChatResponse.sources` 前端展示来源卡片
+- [x] 🔗 DOI 自动补全 — CrossRef API 自动拉取论文元数据
+- [x] 📊 统计面板 — 论文数/标签分布/收藏数/月度柱图
+- [x] 📋 阅读列表 / 自定义集合 — Collection CRUD + 多对多关联管理
 
-### P2（锦上添花，待实现 ⏳）
-- [ ] 📊 统计面板 — 论文数/标签分布/收藏数统计
-- [ ] 🔄 CI 配置 — GitHub Actions 自动测试 + lint
-- [ ] 📋 阅读列表 / 自定义集合 — 扩展 is_favorite 为多列表
+### 全部 Roadmap 功能已完成 ✅

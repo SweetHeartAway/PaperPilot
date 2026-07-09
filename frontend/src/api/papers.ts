@@ -16,6 +16,7 @@ export function fetchPaperList(params: {
   sort_by?: string;
   sort_order?: string;
   tag_ids?: string;
+  collection_id?: number;
 }): Promise<PaperListResponse> {
   return client.get("/api/v1/papers/", { params }).then((res) => res.data);
 }
