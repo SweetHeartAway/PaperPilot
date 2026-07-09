@@ -6,6 +6,8 @@ import {
   deletePaper,
   deletePaperFile,
   toggleFavorite,
+  batchDeletePapers,
+  batchAddTag,
 } from "../api/papers";
 import {
   fetchPaperAISummary,
@@ -189,6 +191,51 @@ export function useToggleFavorite(paperId?: number) {
     },
     onError: (err) => {
       toast.error(getErrorMessage(err, "收藏操作失败"));
+    },
+  });
+}
+
+// ─── Batch Delete ───
+
+export function useBatchDeletePapers() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+  return useMutation({
+    mutationFn: (paperIds: number[]) => batchDeletePapers(paperIds),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.papers.lists() });
+      if (data.succeeded > 0) {
+        toast.success(`已删除 ${data.succeeded} 篇论文`);
+      }
+      if (data.failed > 0) {
+        toast.error(`${data.failed} 篇论文删除失败`);
+      }
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "批量删除失败"));
+    },
+  });
+}
+
+// ─── Batch Add Tag ───
+
+export function useBatchAddTag() {
+  const queryClient = useQueryClient();
+  const toast = useToast();
+  return useMutation({
+    mutationFn: (params: { paperIds: number[]; tagName: string }) =>
+      batchAddTag(params.paperIds, params.tagName),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.papers.lists() });
+      if (data.succeeded > 0) {
+        toast.success(`已为 ${data.succeeded} 篇论文添加标签`);
+      }
+      if (data.failed > 0) {
+        toast.error(`${data.failed} 篇论文添加标签失败`);
+      }
+    },
+    onError: (err) => {
+      toast.error(getErrorMessage(err, "批量添加标签失败"));
     },
   });
 }

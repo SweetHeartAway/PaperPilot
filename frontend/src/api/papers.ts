@@ -1,6 +1,6 @@
 import type { AxiosProgressEvent } from "axios";
 import client from "./client";
-import type { Paper, PaperListResponse } from "../types/paper";
+import type { Paper, PaperListResponse, BatchActionResponse } from "../types/paper";
 
 export function fetchPaperList(params: {
   skip: number;
@@ -100,4 +100,24 @@ export function toggleFavorite(paperId: number): Promise<Paper> {
 /** 获取论文引用导出 URL（BibTeX/RIS） */
 export function getPaperExportUrl(paperId: number, format: "bibtex" | "ris"): string {
   return (client.defaults.baseURL as string) + `/api/v1/papers/${paperId}/export?format=${format}`;
+}
+
+/** 批量删除论文 */
+export async function batchDeletePapers(paperIds: number[]): Promise<BatchActionResponse> {
+  const { data } = await client.post<BatchActionResponse>("/api/v1/papers/batch/delete", {
+    paper_ids: paperIds,
+  });
+  return data;
+}
+
+/** 批量给论文添加标签 */
+export async function batchAddTag(
+  paperIds: number[],
+  tagName: string,
+): Promise<BatchActionResponse> {
+  const { data } = await client.post<BatchActionResponse>("/api/v1/papers/batch/tags", {
+    paper_ids: paperIds,
+    tag_name: tagName,
+  });
+  return data;
 }

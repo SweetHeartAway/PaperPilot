@@ -166,3 +166,87 @@ def delete_paper(db: Session, paper_id: int, user_id: int):
         logger.warning("向量索引清理失败（不影响删除）: paper_id=%s, error=%s", paper_id, e)
 
     return True
+
+
+def batch_delete_papers(db: Session, paper_ids: list[int], user_id: int) -> list[dict]:
+    """批量删除论文（跳过不存在的论文，不抛异常）
+
+    返回格式：[{"paper_id": int, "status": "success"|"failed", "reason": str|None}]
+    """
+    results = []
+    for paper_id in paper_ids:
+        try:
+            db_paper = (
+                db.query(Paper).filter(Paper.id == paper_id, Paper.user_id == user_id).first()
+            )
+            if not db_paper:
+                results.append(
+                    {
+                        "paper_id": paper_id,
+                        "status": "failed",
+                        "reason": "论文不存在或无权操作",
+                    }
+                )
+                continue
+
+            if db_paper.file_uuid:
+                _remove_file(db_paper.file_uuid)
+
+            # 清理向量索引
+            try:
+                from app.services.indexing_service import remove_paper_index
+
+                remove_paper_index(paper_id)
+            except Exception as e:
+                logger.warning("向量索引清理失败: paper_id=%s, error=%s", paper_id, e)
+
+            db.delete(db_paper)
+            db.commit()
+            results.append({"paper_id": paper_id, "status": "success", "reason": None})
+        except Exception as e:
+            db.rollback()
+            results.append({"paper_id": paper_id, "status": "failed", "reason": str(e)})
+
+    return results
+
+
+def batch_add_tag(db: Session, paper_ids: list[int], tag_name: str, user_id: int) -> list[dict]:
+    """批量给论文添加标签（自动创建标签，幂等操作）
+
+    返回格式：[{"paper_id": int, "status": "success"|"failed", "reason": str|None}]
+    """
+    from app.models.tag import Tag
+
+    results = []
+    name = tag_name.strip()
+
+    # 查找或创建标签
+    tag = db.query(Tag).filter(Tag.name == name).first()
+    if not tag:
+        tag = Tag(name=name)
+        db.add(tag)
+        db.flush()
+
+    for paper_id in paper_ids:
+        try:
+            paper = db.query(Paper).filter(Paper.id == paper_id, Paper.user_id == user_id).first()
+            if not paper:
+                results.append(
+                    {
+                        "paper_id": paper_id,
+                        "status": "failed",
+                        "reason": "论文不存在或无权操作",
+                    }
+                )
+                continue
+
+            if tag not in paper.tags:
+                paper.tags.append(tag)
+
+            db.commit()
+            results.append({"paper_id": paper_id, "status": "success", "reason": None})
+        except Exception as e:
+            db.rollback()
+            results.append({"paper_id": paper_id, "status": "failed", "reason": str(e)})
+
+    return results

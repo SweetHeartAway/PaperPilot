@@ -26,3 +26,16 @@ export interface PaperListResponse {
   items: Paper[];
   total: number;
 }
+
+export interface BatchActionItem {
+  paper_id: number;
+  status: "success" | "failed";
+  reason: string | null;
+}
+
+export interface BatchActionResponse {
+  total: number;
+  succeeded: number;
+  failed: number;
+  results: BatchActionItem[];
+}

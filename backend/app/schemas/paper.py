@@ -52,3 +52,33 @@ class PaperListResponse(BaseModel):
 
     items: list[Paper]
     total: int
+
+
+class BatchActionItem(BaseModel):
+    """批量操作中单篇论文的结果"""
+
+    paper_id: int
+    status: str  # "success" | "failed"
+    reason: str | None = None
+
+
+class BatchActionResponse(BaseModel):
+    """批量操作响应"""
+
+    total: int
+    succeeded: int
+    failed: int
+    results: list[BatchActionItem]
+
+
+class BatchDeleteRequest(BaseModel):
+    """批量删除请求"""
+
+    paper_ids: list[int] = Field(..., min_length=1, max_length=50)
+
+
+class BatchTagRequest(BaseModel):
+    """批量添加标签请求"""
+
+    paper_ids: list[int] = Field(..., min_length=1, max_length=50)
+    tag_name: str = Field(..., min_length=1, max_length=100)

@@ -15,7 +15,16 @@ from app.schemas.ai import (
     BatchAnalysisResponse,
     VersionDiffResponse,
 )
-from app.schemas.paper import Paper, PaperCreate, PaperListResponse, PaperUpdate
+from app.schemas.paper import (
+    BatchActionItem,
+    BatchActionResponse,
+    BatchDeleteRequest,
+    BatchTagRequest,
+    Paper,
+    PaperCreate,
+    PaperListResponse,
+    PaperUpdate,
+)
 from app.schemas.tag import TagName
 from app.services import tag_service
 from app.services.ai_summary_service import (
@@ -28,6 +37,8 @@ from app.services.ai_summary_service import (
 from app.services.export_service import export_paper_citation
 from app.services.file_service import delete_paper_file, download_paper_file, upload_paper_file
 from app.services.paper_service import (
+    batch_add_tag,
+    batch_delete_papers,
     create_paper,
     delete_paper,
     get_paper,
@@ -287,6 +298,51 @@ def batch_ai_summary(
         accepted=accepted,
         skipped=skipped,
         results=[BatchAnalysisItem(**r) for r in results],
+    )
+
+
+@router.post("/batch/delete", response_model=BatchActionResponse)
+def batch_delete_papers_route(
+    request: BatchDeleteRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """批量删除论文"""
+    results = batch_delete_papers(
+        db,
+        paper_ids=request.paper_ids,
+        user_id=current_user.id,
+    )
+    succeeded = sum(1 for r in results if r["status"] == "success")
+    failed = sum(1 for r in results if r["status"] == "failed")
+    return BatchActionResponse(
+        total=len(results),
+        succeeded=succeeded,
+        failed=failed,
+        results=[BatchActionItem(**r) for r in results],
+    )
+
+
+@router.post("/batch/tags", response_model=BatchActionResponse)
+def batch_add_tags_route(
+    request: BatchTagRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """批量给论文添加标签（标签不存在则自动创建）"""
+    results = batch_add_tag(
+        db,
+        paper_ids=request.paper_ids,
+        tag_name=request.tag_name,
+        user_id=current_user.id,
+    )
+    succeeded = sum(1 for r in results if r["status"] == "success")
+    failed = sum(1 for r in results if r["status"] == "failed")
+    return BatchActionResponse(
+        total=len(results),
+        succeeded=succeeded,
+        failed=failed,
+        results=[BatchActionItem(**r) for r in results],
     )
 
 
