@@ -5,6 +5,7 @@ import type {
   PaperListResponse,
   BatchActionResponse,
   DOILookupResponse,
+  PaperStats,
 } from "../types/paper";
 
 export function fetchPaperList(params: {
@@ -130,5 +131,11 @@ export async function batchAddTag(
 /** 通过 DOI 自动补全论文元数据 */
 export async function lookupDOI(doi: string): Promise<DOILookupResponse> {
   const { data } = await client.post<DOILookupResponse>("/api/v1/papers/doi-lookup", { doi });
+  return data;
+}
+
+/** 获取论文库统计概览 */
+export async function fetchPaperStats(): Promise<PaperStats> {
+  const { data } = await client.get<PaperStats>("/api/v1/papers/stats");
   return data;
 }

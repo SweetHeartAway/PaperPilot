@@ -97,3 +97,40 @@ class DOILookupResponse(BaseModel):
     authors: str
     abstract: str | None = None
     publication_date: datetime | None = None
+
+
+class TagDistributionItem(BaseModel):
+    """标签分布统计项"""
+
+    id: int
+    name: str
+    paper_count: int
+
+
+class AIAnalysisStats(BaseModel):
+    """AI 分析统计"""
+
+    total: int
+    completed: int
+    failed: int
+    total_tokens: int
+
+
+class MonthlyPaperCount(BaseModel):
+    """月度论文新增数"""
+
+    month: str
+    count: int
+
+
+class PaperStatsResponse(BaseModel):
+    """论文库统计概览响应"""
+
+    total_papers: int
+    favorited_papers: int
+    total_tags: int
+    papers_with_files: int
+    average_file_size: float | None = None
+    tag_distribution: list[TagDistributionItem]
+    ai_analysis: AIAnalysisStats
+    papers_by_month: list[MonthlyPaperCount]

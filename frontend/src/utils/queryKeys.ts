@@ -29,4 +29,7 @@ export const queryKeys = {
   user: {
     me: ["user", "me"] as const,
   },
+  stats: {
+    all: ["stats"] as const,
+  },
 };

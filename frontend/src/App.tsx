@@ -15,6 +15,7 @@ import PaperListPage from "./pages/PaperListPage";
 // 非首屏页面 — 懒加载
 const PaperCreatePage = lazy(() => import("./pages/PaperCreatePage"));
 const PaperDetailPage = lazy(() => import("./pages/PaperDetailPage"));
+const StatsPage = lazy(() => import("./pages/StatsPage"));
 const TagsPage = lazy(() => import("./pages/TagsPage"));
 const PromptsPage = lazy(() => import("./pages/PromptsPage"));
 const ProfilePage = lazy(() => import("./pages/ProfilePage"));
@@ -25,6 +26,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/papers", label: "论文" },
   { to: "/tags", label: "标签" },
   { to: "/prompts", label: "Prompt 模板" },
+  { to: "/stats", label: "统计" },
   { to: "/profile", label: "个人中心" },
 ];
 
@@ -73,6 +75,7 @@ export default function App() {
                 <Route path="papers/:id" element={<PaperDetailPage />} />
                 <Route path="tags" element={<TagsPage />} />
                 <Route path="prompts" element={<PromptsPage />} />
+                <Route path="stats" element={<StatsPage />} />
                 <Route path="profile" element={<ProfilePage />} />
               </Route>
             </Route>

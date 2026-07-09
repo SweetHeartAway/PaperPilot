@@ -25,10 +25,11 @@ from app.schemas.paper import (
     Paper,
     PaperCreate,
     PaperListResponse,
+    PaperStatsResponse,
     PaperUpdate,
 )
 from app.schemas.tag import TagName
-from app.services import doi_service, tag_service
+from app.services import doi_service, stats_service, tag_service
 from app.services.ai_summary_service import (
     diff_versions,
     get_ai_summary,
@@ -255,6 +256,18 @@ def remove_tag_from_paper(
             status_code = status.HTTP_404_NOT_FOUND
         raise HTTPException(status_code=status_code, detail=detail)
     return None
+
+
+# ─── 统计 ──────────────────────────────────────────────────
+
+
+@router.get("/stats", response_model=PaperStatsResponse)
+def read_paper_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """获取论文库统计概览（论文总数、收藏数、标签分布、AI 分析统计等）"""
+    return stats_service.get_paper_stats(db, user_id=current_user.id)
 
 
 # ─── DOI 自动补全 ──────────────────────────────────────────

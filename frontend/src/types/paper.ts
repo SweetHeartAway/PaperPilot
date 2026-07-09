@@ -46,3 +46,32 @@ export interface DOILookupResponse {
   abstract: string | null;
   publication_date: string | null;
 }
+
+export interface TagDistributionItem {
+  id: number;
+  name: string;
+  paper_count: number;
+}
+
+export interface AIAnalysisStats {
+  total: number;
+  completed: number;
+  failed: number;
+  total_tokens: number;
+}
+
+export interface MonthlyPaperCount {
+  month: string;
+  count: number;
+}
+
+export interface PaperStats {
+  total_papers: number;
+  favorited_papers: number;
+  total_tags: number;
+  papers_with_files: number;
+  average_file_size: number | null;
+  tag_distribution: TagDistributionItem[];
+  ai_analysis: AIAnalysisStats;
+  papers_by_month: MonthlyPaperCount[];
+}
