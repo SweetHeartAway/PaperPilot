@@ -60,6 +60,7 @@ uploads/
 *.pdf
 *.docx
 *.txt
+!requirements.txt
 
 # Alembic
 alembic/versions/*.pyc
