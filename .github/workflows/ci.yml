@@ -34,9 +34,6 @@ jobs:
       - name: Install lint tools
         run: pip install ruff
 
-      - name: Debug - check installed packages
-        run: cd backend && pip list 2>/dev/null | grep -i "openai\|pydantic" || echo "openai NOT FOUND"
-
       - name: Ruff lint check
         run: cd backend && ruff check --output-format=github .
 
