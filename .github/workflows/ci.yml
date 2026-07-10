@@ -18,9 +18,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Debug - check current dir and files
-        run: pwd && ls -la && echo "---" && ls -la backend/ || echo "NO backend dir"
-
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
         with:
