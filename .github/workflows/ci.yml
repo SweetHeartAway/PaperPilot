@@ -26,18 +26,16 @@ jobs:
           cache-dependency-path: backend/requirements.txt
 
       - name: Install dependencies
-        working-directory: ./backend
         run: |
+          cd backend
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Ruff lint check
-        working-directory: ./backend
-        run: ruff check --output-format=github .
+        run: cd backend && ruff check --output-format=github .
 
       - name: Run tests
-        working-directory: ./backend
-        run: python -m pytest tests/ -x --tb=short -q
+        run: cd backend && python -m pytest tests/ -x --tb=short -q
         env:
           PYTHONPATH: .
 
