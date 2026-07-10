@@ -236,7 +236,7 @@ api/ (HTTP only) → services/ (transform) → hooks/ (React Query) → pages/ (
 | 论文编辑（行内编辑模式） | ✅ |
 | 论文删除（列表页 + 详情页） | ✅ |
 | PDF 文件删除 | ✅ |
-| AI 分析 5 Tab（摘要/Method/Result/Conclusion/关键词） | ✅ |
+| AI 分析 5 Tab（摘要/方法/结果/结论/关键词） | ✅ |
 | AI 分析版本管理（版本历史/Diff 对比） | ✅ |
 | AI 分析强制重新生成（force_regenerate） | ✅ |
 | 批量 AI 分析（列表页选择 → 一键分析） | ✅ |
@@ -290,19 +290,4 @@ api/ (HTTP only) → services/ (transform) → hooks/ (React Query) → pages/ (
 
 ## 后续待完善（Roadmap）
 
-> 以下为基于现有代码分析的业务功能建议，按 P0-P2 优先级排列。
-> Claude Code 在执行任务时，仅在用户明确要求的情况下完成对应内容。
-
-### P0（高价值低投入 ✅）
-- [x] ⭐ 论文收藏功能 — 利用已有 `is_favorite` 字段，前后端完整交互
-- [x] 📄 BibTeX/RIS 引用导出 — 独立 `export_service.py`，支持两种学术引用格式
-- [x] 🔍 论文列表排序 + 标签筛选 — 排序下拉（时间/标题/日期）+ 标签 chips 多选
-
-### P1（实用功能 ✅）
-- [x] 🗑️ 批量删除 / 批量打标签 — 批量模式 + 后端批量端点 + 前端按钮
-- [x] 📚 Chat 面板展示引用来源 — 后端 `ChatResponse.sources` 前端展示来源卡片
-- [x] 🔗 DOI 自动补全 — CrossRef API 自动拉取论文元数据
-- [x] 📊 统计面板 — 论文数/标签分布/收藏数/月度柱图
-- [x] 📋 阅读列表 / 自定义集合 — Collection CRUD + 多对多关联管理
-
-### 全部 Roadmap 功能已完成 ✅
+> 全部 Roadmap 功能已完成，详见上方「当前功能状态」。

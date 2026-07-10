@@ -57,6 +57,7 @@ const TAB_LABELS: Record<string, string> = {
   method: "方法",
   result: "结果",
   conclusion: "结论",
+  keywords: "关键词",
 };
 
 function getTabLabel(tab: string): string {
