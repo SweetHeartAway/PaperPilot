@@ -31,6 +31,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Install lint tools
+        run: pip install ruff
+
       - name: Ruff lint check
         run: cd backend && ruff check --output-format=github .
 
